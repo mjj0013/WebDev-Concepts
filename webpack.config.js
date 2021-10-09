@@ -50,7 +50,18 @@ module.exports = {
 			  },
 			],
 			
-		  }
+		  },
+		  {
+			test: /\.svg$/,
+			use: [
+			  {
+				loader: 'svg-url-loader',
+				options: {
+				  limit: 10000,
+				},
+			  },
+			],
+		  },
 		]
 		
 	},
@@ -66,6 +77,7 @@ module.exports = {
 	},
 	devServer: {
 		host: 'localhost',
+		
 		port: 8080,
 		historyApiFallback: true,
 		open: true,
