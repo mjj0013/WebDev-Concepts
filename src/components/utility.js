@@ -26,6 +26,17 @@ export function loadTextFile(e) {
     
 }
 
+export function replaceAll(str,find,replace) {
+    return str.replace(new RegExp(find.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'), 'g'), replace)
+};
+
+
+export function radians_to_degrees(radians)
+{
+  var pi = Math.PI;
+  return radians * (pi/180);
+}
+
 export function getAvgRgbaOfImage(image_url) {
     var temp_canvas = document.createElement('canvas');
     var temp_context = temp_canvas.getContext('2d');

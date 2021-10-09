@@ -12,12 +12,11 @@ class GameObject {
         this.xVelocity = xVelocity;
         this.yVelocity = yVelocity;
 
-
+        this.angularVelocity =0;
+        this.angularAccel = 0;
         
-        this.angularVelocity = {x:0.0, y:0.0};
+        //this.angularVelocity = {x:0.0, y:0.0};
 
-        this.ang_x_vel = 0.0;
-        this.ang_y_vel = 0.0;
 
         this.mass = mass;
         this.collidable=false;

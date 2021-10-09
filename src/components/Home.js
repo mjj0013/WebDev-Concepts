@@ -2,15 +2,19 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import Layout from './Layout';
-import { Header, Container, Divider, Icon } from 'semantic-ui-react';
+import {Menu,Accordion,Card,Segment,Button, Header, Container, Divider, Icon } from 'semantic-ui-react';
+
 import './layout.css';
 
+import PropTypes from 'prop-types';
+
+import CalculatorModal from './CalculatorModal';
 
 
+import bg_image from "../img/pine_tree.jpeg";
+import bg_image2 from "../img/high_res_grass.jpeg";
 
-
-import bg_image from "../img/bridge.jpeg";
-
+import SettingsModal from './SettingsModal';
 
 
 class Home extends React.Component {
@@ -22,9 +26,22 @@ class Home extends React.Component {
 		this.bgCanvasRef = React.createRef();		//background canvas reference
         this.bgContextRef = React.createRef();		//background context reference
 		this.mouseClickHandler = this.mouseClickHandler.bind(this);
+
+		
+		this.toggleSettings = this.toggleSettings.bind(this);
+		this.toggleCalculator = this.toggleCalculator.bind(this);
+	
+		this.getChildContext = this.getChildContext.bind(this);
+		
+
+		this.state = { activeIndex: 0 }
 	}
 
 	
+
+	getChildContext() {
+		return {toggleSettings:this.toggleSettings}
+	}
 
 	mouseClickHandler = (canvas,e) =>{
 		
@@ -51,73 +68,108 @@ class Home extends React.Component {
     }
 
 	componentDidMount = () => {
+
 		this.bgCanvasRef.current.addEventListener('mousedown', (e) => {this.mouseClickHandler(this.bgCanvasRef.current,e)});
+
+
 		this.bgContextRef.current = this.bgCanvasRef.current.getContext('2d');
-
-		
-		var image = new Image();
-		image.onload = () => {
-			this.bgCanvasRef.current.height = this.bgCanvasRef.current.width * (image.height/image.width);
-
-
-			var temp_canvas = document.createElement('canvas');
-			var temp_context = temp_canvas.getContext('2d');
-			temp_canvas.width = image.width * 0.5;
-			temp_canvas.height = image.height * 0.5;
-			temp_context.drawImage(image, 0, 0, temp_canvas.width, temp_canvas.height);
-			temp_canvas.width = image.width * 0.5;
-			temp_canvas.height = image.height * 0.5;
-			temp_context.drawImage(image, 0, 0, temp_canvas.width, temp_canvas.height);
-
-			// step 2
-			temp_context.drawImage(temp_canvas, 0, 0, temp_canvas.width * 0.5, temp_canvas.height * 0.5);
-
-
-			this.bgContextRef.current.drawImage(temp_canvas, 0, 0, temp_canvas.width * 0.5, temp_canvas.height * 0.5,
-				0, 0, this.bgCanvasRef.current.width, this.bgCanvasRef.current.height);
-
-
-			this.bgContextRef.current.drawImage(temp_canvas, 0, 0, temp_canvas.width * 0.5, temp_canvas.height * 0.5,
-				0, 0, this.bgCanvasRef.current.width, this.bgCanvasRef.current.height);
-
-		
+		var image1 = new Image();
+		image1.onload = () => {
+			document.getElementById("subCanvas1").getContext('2d').drawImage(image1, 0, 0, image1.width, image1.height);
 		}
-		image.src="../img/bridge.jpeg";
+		image1.src="../img/pine_tree.jpeg";
 
-		
-		
-		
-		
-		
 
-		
+		var image2 = new Image();
+		image2.onload = () => {
+			document.getElementById("subCanvas2").getContext('2d').drawImage(image2, 0, image1.height, image2.width, image2.height);
+		}
+		image2.src="../img/high_res_grass.jpeg";
+
 
 	}
-	//<canvas class="home-widget"> </canvas>
-	//<img class="backgroundImage" src={image} />
+
+	toggleCalculator() {
+		let w = document.getElementById("cw");
+		
+        if(w.style.display=="none" || w.style.display=='') {
+			
+            w.style.display="block";
+			window.setInterval(w.updateAnswer, 1000);
+        }
+        else {
+            w.style.display="none";
+        }
+	}
+
+	toggleSettings(e) {
+		
+		
+		let w = document.getElementById("sw");
+		
+        if(w.style.display=="none" || w.style.display=='') {
+			
+            w.style.display="block";
+			//window.setInterval(w.updateAnswer, 1000);
+        }
+        else {
+            w.style.display="none";
+        }
+		
+		
+
+		if(e.target.id=="calcSettingsButton") {		//settings request came from calculator
+			console.log("calculator button requested settings")
+
+			//document.getElementById('elementSettingsPage').appendChild(this.calculatorSpecificSettings());
+			console.log(document.getElementById('elementSettingsPage'));
+			this.currentFocusedElement = "calc";
+		}
+
+		if(e.target.id=="homeSettingsButton") {		//settings request came from Home Page
+			console.log("home button requested settings")
+		}
+	}
+
+
+
 	
 	render() {
 		return (
-			<Container>
+			<Container id="homeRoot">
 				
+                
 				
-					<canvas ref={this.bgCanvasRef} className="backgroundCanvas" id="bgCanvas" width="1200px" height="675px"></canvas>
-				
-				
-				
-	
 				<Layout title="Home" description="asdfasfd">
 					<Header as="h2">This is the home page</Header>
+					
 					<p>This is a description about the home page.</p>
 					
-					
+					<canvas ref={this.bgCanvasRef} className="backgroundCanvas" id="bgCanvas" width="1200px" height="1000px"></canvas>
+					<canvas className="subCanvas" id="subCanvas1" width="800px" height="600px"></canvas>
+					<canvas className="subCanvas" id="subCanvas2" width="800px" height="600px"></canvas>
+
 				</Layout>
+				
+				<Divider />
+				
+				
+				
+				<CalculatorModal id="cm" toggleSettings={this.toggleSettings}/>
+				<SettingsModal id='calcSettingsModal'/>
+				
+				
 			</Container>
 			
 		  );
 	}
 }
 
+Home.childContextTypes = {
+	toggleSettings: PropTypes.func,
+
+}
+//<button id="calculatorButton">Calculator</button>
 
 export default Home;
 

@@ -37,7 +37,6 @@ class DynamicPage extends React.Component {
         
     }
    
-
     render() {
         return (
             <Layout title="File Loading Page" description="Description about file">

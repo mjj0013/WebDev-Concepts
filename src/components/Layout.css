@@ -4,13 +4,54 @@ body {
 	font-family: 'Quicksand', sans-serif;
 	font-variant: small-caps;
 	font-size:18px;
-	background-color: grey
-
+	background-color: #808080;
+	--gradientColor:rgb(107, 76, 219);
 	
 	
 }
+.nav-menu {
+	position:fixed;
+
+	top: 0;
+	left: 0;
+	width: var(--nav-width);
+	height: 100vh;
+	background-color:#222222;
+	
+	
+	
+
+}
+.nav-link {
+	
+	display: block;
+	padding: 12px 18px;
+	text-decoration: none;
+	color:#eeeeee;
+	
+	font-weight: 500;
+	background-image: linear-gradient(to right,#222222,25%,#61d444,50%,#222222);
+	background-size:300%; 
+	background-position: center;
+	transition: background-position 1s;
+}
 
 
+
+.nav-link:hover,
+.nav-link:focus {
+	background-position:left;
+	
+	/*background: rgba(255,255,255,0.05);*/
+}
+
+.navBarButton {
+	margin-right:5px;
+	
+	
+	
+
+}
 
 
 .pull-right {
@@ -32,17 +73,30 @@ a {
 
 
 .backgroundCanvas {
+	position:absolute;
+	z-index:4;
+	top:0%;
+
 	margin-left:25px;
 	margin-right:25px;
 	
 	margin-top: 50px;
+	
+}
+
+.subCanvas {
+	position:absolute;
+	top:30%;
+
+	z-index:5;
+	
 }
 
 
 
 .mainHeader {
 	display:block;
-	position:fixed;
+	
 	
 }
 
@@ -72,31 +126,9 @@ a {
 	background-color: rgba(52, 73, 94, 0.75);
 }
 
-.nav-menu {
-	position:fixed;
-	top: 0;
-	left: 0;
-	width: var(--nav-width);
-	height: 100vh;
-	background:#222222;
-	
-
-}
-
-.nav-link {
-	
-	display: block;
-	padding: 12px 18px;
-	text-decoration: none;
-	color:#eeeeee;
-	font-weight: 500;
 
 
-}
 
-.nav-link:hover {
-	background: rgba(255,255,255,0.05);
-}
 
 
 #fileText {
@@ -187,15 +219,11 @@ select {
 	75% {
 		background: radial-gradient(circle at 50%, rgba(74, 47, 197,1) 25%, 	rgba(110, 110, 196,1) 50% , rgba(144, 184, 192,1), 80%rgba(20, 8, 230,1) 100%);
 	}
-	
 	100% {
 		
 		background: radial-gradient(circle at 50%, rgba(20, 8, 230,1) 25%, 		rgba(74, 47, 197,1) 50% , 	rgba(110, 110, 196,1) 80%, rgba(144, 184, 192,1) 100%);
 	}	
 }
-
-
-
 
 
 

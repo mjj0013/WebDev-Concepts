@@ -1,21 +1,15 @@
 import React, {useRef} from 'react';
 
-import {Table, Header, Container, Divider, Icon } from 'semantic-ui-react';
+import {Table, Header, Container, Divider, Icon, ItemContent } from 'semantic-ui-react';
 
 import Layout from '../Layout';
 import "regenerator-runtime/runtime";
 
-
 import BackgroundEffect from './BackgroundEffect';
 import PhysicalObject from './PhysicalObject';
-
-import ObjTable from './ObjTable.js';
-
-
+//import ObjTable from './ObjTable.js';
 import "../utility.js"
 import { getRandomInt } from '../utility.js';
-
-
 class Game extends React.Component {
     
     constructor(props) {
@@ -32,6 +26,7 @@ class Game extends React.Component {
         this.moveLeft = this.moveLeft.bind(this);
         this.moveUp = this.moveUp.bind(this);
         this.moveDown = this.moveDown.bind(this);
+        this.moveSpin = this.moveSpin.bind(this);
         this.addPhysicalObject = this.addPhysicalObject.bind(this);
         this.clearWorld = this.clearWorld.bind(this);
         this.renderTable = this.renderTable.bind(this);
@@ -66,7 +61,7 @@ class Game extends React.Component {
         this.backgroundLightness = 95;
 
 
-        this.userExertion = 10;
+        this.userExertion = 5;      //was 10
         this.grid_length = 75;
 
         this.fromLocation = null;
@@ -74,6 +69,8 @@ class Game extends React.Component {
 
         this.xGlobalForce = 0.0;
         this.yGlobalForce = 0.0;
+
+        
 
 
     }
@@ -161,6 +158,16 @@ class Game extends React.Component {
                 this.physicalObjects[this.controlledObjectIndex].yVelocity + this.userExertion;
         //console.log(this.physicalObjectMap);
     };
+
+    moveSpin = () => {
+        //++this.physicalObjects[this.controlledObjectIndex].angleIter;
+        //this.physicalObjects[this.controlledObjectIndex].angleOrient = this.physicalObjects[this.controlledObjectIndex].angleIter*(Math.PI/16);
+        this.physicalObjects[this.controlledObjectIndex].angularAccel = 60;
+        this.physicalObjects[this.controlledObjectIndex].rotating = true;
+        //console.log("ang vel:  "+ this.physicalObjects[this.controlledObjectIndex].angularVelocity);
+        
+
+    }
    
     moveUp = () => {
         this.physicalObjects[this.controlledObjectIndex].yVelocity = 
@@ -174,7 +181,9 @@ class Game extends React.Component {
     moveRight = () => {
         this.physicalObjects[this.controlledObjectIndex].xVelocity = 
                 this.physicalObjects[this.controlledObjectIndex].xVelocity + this.userExertion;
+                
     };
+    
 
     saveStates = () => {
 
@@ -277,6 +286,10 @@ class Game extends React.Component {
                     case "ArrowDown":
                         this.moveDown();
                         break;
+                    case "KeyR":
+                        this.moveSpin();
+                        break;
+
                     
                 }
             }
@@ -357,16 +370,33 @@ class Game extends React.Component {
         const x = e.clientX - rect.left
         const y = e.clientY - rect.top
 
+
+
+
         this.physicalObjectMap.forEach((item,index) => {
                 var isInside = false
                 var item = this.physicalObjects[index];
                 if(item.controllable==true) {
-                    if((x >= item.x-item.radius) && (x <= item.x+item.radius)) {
-                        if((y >= item.y-item.radius) && (y <= item.y+item.radius)) {
-                            isInside=true;
-                            this.controlledObjectIndex = index;
+
+                    if(item.shape == 'ellipse') {
+                        if((x >= item.x-item.radius) && (x <= item.x+item.radius)) {
+                            if((y >= item.y-item.radius) && (y <= item.y+item.radius)) {
+                                isInside=true;
+                                this.controlledObjectIndex = index;
+                            }
+                        }
+
+                    }
+                    else if(item.shape == 'rectangle') {
+                        if((x >= item.x) && (x <= item.x+item.width)) {
+                            if((y >= item.y) && (y <= item.y+item.height)) {
+                                isInside=true;
+                                this.controlledObjectIndex = index;
+                            }
                         }
                     }
+
+                    
                 }
         })
         
@@ -400,13 +430,9 @@ class Game extends React.Component {
                 if(collides) {
                     ++num_of_failures;
                     break;
-                    
-                   
                 }
             }
             foundSpot = true;
-           
-
         }    
         this.addPhysicalObject("user-ellipse",x,y,radius,radius,0,0,mass,null);
         
@@ -472,14 +498,13 @@ class Game extends React.Component {
                     <canvas ref={this.canvasRef} id="graphicsView" width={this.canvasWidth} height={this.canvasHeight}></canvas>
                 </Container>
 
+                
+
                 <Container id="gameControlPanel">
                     <button id="addOrbButton" onClick={this.insertRandomizedOrb} >
                         <Icon name='add' />
                         
                     </button>
-                    
-                        
-                   
                     
                     <Divider />
                     <div>

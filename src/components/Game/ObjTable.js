@@ -8,11 +8,35 @@ import {Table, Header, Container, Divider, Icon } from 'semantic-ui-react';
 
 class ObjTable extends React.Component {
 
+    constructor(props) {
+        super(props);
 
+        this.tableData = [];
+
+
+    }
+
+    update() {
+        this.tableData.map((item,index) => {
+            <Table.Row key={record.RelocationId}>
+            <Table.Cell>{item.index}</Table.Cell>
+            <Table.Cell>{item.x}</Table.Cell>
+            <Table.Cell>{item.y}</Table.Cell>
+            <Table.Cell>{item.dx}</Table.Cell>
+            <Table.Cell>{item.dy}</Table.Cell>
+            <Table.Cell>{item.mass}</Table.Cell>
+            <Table.Cell>{item.radius}</Table.Cell>
+
+
+        </Table.Row>
+        })
+        
+    }
+    
 
     render() {
         return (
-            <Table id="objectAttrTable" celled singleLine compact sortable selectable >
+            <Table celled singleLine compact sortable selectable >
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell>object #</Table.HeaderCell>
@@ -24,9 +48,10 @@ class ObjTable extends React.Component {
                         <Table.HeaderCell>radius</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
-                
+                {children}
             </Table>
         );
         
     }
 }
+export default ObjTable;

@@ -14,7 +14,7 @@ const Layout = ({title="Title", description="Description", children }) => {
 		<NavBar />
 		
 		
-		<Container class="mainHeader">
+		<Container className="mainHeader">
       			<h2>{title}</h2>
       			<p >{description}</p>
       	</Container>
