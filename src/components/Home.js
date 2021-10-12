@@ -11,8 +11,10 @@ import PropTypes from 'prop-types';
 import CalculatorModal from './CalculatorModal';
 
 
-import bg_image from "../img/pine_tree.jpeg";
+import bg_image1 from "../img/pine_tree.jpeg";
 import bg_image2 from "../img/high_res_grass.jpeg";
+import bg_image3 from "../img/IMG_2313.jpg";
+
 
 import SettingsModal from './SettingsModal';
 
@@ -69,23 +71,38 @@ class Home extends React.Component {
 
 	componentDidMount = () => {
 
-		this.bgCanvasRef.current.addEventListener('mousedown', (e) => {this.mouseClickHandler(this.bgCanvasRef.current,e)});
+		// this.bgCanvasRef.current.addEventListener('mousedown', (e) => {this.mouseClickHandler(this.bgCanvasRef.current,e)});
 
 
-		this.bgContextRef.current = this.bgCanvasRef.current.getContext('2d');
-		var image1 = new Image();
-		image1.onload = () => {
-			document.getElementById("subCanvas1").getContext('2d').drawImage(image1, 0, 0, image1.width, image1.height);
-		}
-		image1.src="../img/pine_tree.jpeg";
+		// this.bgContextRef.current = this.bgCanvasRef.current.getContext('2d');
+		// var image1 = new Image();
+		// image1.onload = () => {
+		// 	document.getElementById("subCanvas1").getContext('2d').drawImage(image1, 0, 0, image1.width, image1.height);
+		// }
+		// image1.src="../img/pine_tree.jpeg";
 
 
-		var image2 = new Image();
-		image2.onload = () => {
-			document.getElementById("subCanvas2").getContext('2d').drawImage(image2, 0, image1.height, image2.width, image2.height);
-		}
-		image2.src="../img/high_res_grass.jpeg";
+		// var image2 = new Image();
+		
+		// image2.onload = () => {
+		// 	document.getElementById("subCanvas2").getContext('2d').drawImage(image2, 0, image1.height, image2.width, image2.height);
+		// }
+		// image2.src="../img/high_res_grass.jpeg";
 
+
+		// var image3 = new Image();
+		// image3.onload = () => {
+			
+		// 	document.getElementById("subCanvas3").getContext('2d').drawImage(image3, 0, image1.height, image2.width, image2.height);
+		// }
+		// image3.src="../img/IMG_2312.jpg";
+
+
+		// document.body.style.backgroundImage = 'url("../img/IMG_2313.jpg")';
+		// document.body.style.backgroundRepeat = 'no-repeat';
+		// document.body.style.backgroundAttachment='fixed';
+		
+	
 
 	}
 
@@ -138,17 +155,14 @@ class Home extends React.Component {
 		return (
 			<Container id="homeRoot">
 				
+					
                 
 				
-				<Layout title="Home" description="asdfasfd">
+				<Layout className="homeLayout" title="Home" description="asdfasfd">
 					<Header as="h2">This is the home page</Header>
 					
 					<p>This is a description about the home page.</p>
 					
-					<canvas ref={this.bgCanvasRef} className="backgroundCanvas" id="bgCanvas" width="1200px" height="1000px"></canvas>
-					<canvas className="subCanvas" id="subCanvas1" width="800px" height="600px"></canvas>
-					<canvas className="subCanvas" id="subCanvas2" width="800px" height="600px"></canvas>
-
 				</Layout>
 				
 				<Divider />
@@ -157,7 +171,7 @@ class Home extends React.Component {
 				
 				<CalculatorModal id="cm" toggleSettings={this.toggleSettings}/>
 				<SettingsModal id='calcSettingsModal'/>
-				
+				<img class="backgroundCanvas" src='../img/IMG_2313.jpg'/>
 				
 			</Container>
 			
