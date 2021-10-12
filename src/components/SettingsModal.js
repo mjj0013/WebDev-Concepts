@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {Button, Menu, Accordion,Tab, Dropdown,Icon ,Label, Segment} from 'semantic-ui-react';
+import {Button,Header, Table, Accordion,Tab, Dropdown,Icon ,Label, Segment} from 'semantic-ui-react';
 
 //import { ColorPicker, useColor } from "react-color-palette";
 import { HexColorPicker } from "react-colorful";
@@ -17,24 +17,24 @@ import {CloseIcon} from '../icons/importSVG';
 const gradientChoices = {
     
     background: [
-        {text:"None", value:"NoneBackground"},
-        {text:"Linear", value:"LinearBackground"},
-        {text:"Radial", value:"RadialBackground"},
+        {key:"None", text:"None", value:"NoneBackground"},
+        {key:"Linear", text:"Linear", value:"LinearBackground"},
+        {key:"Radial", text:"Radial", value:"RadialBackground"},
     ],
     buttons: [
-        {text:"None", value:"NoneButtons"},
-        {text:"Linear", value:"LinearButtons"},
-        {text:"Radial", value:"RadialButtons"},
+        {key:"None", text:"None", value:"NoneButtons"},
+        {key:"Linear",text:"Linear", value:"LinearButtons"},
+        {key:"Radial",text:"Radial", value:"RadialButtons"},
     ],
     lineEdits: [
-        {text:"None", value:"NoneLineEdits"},
-        {text:"Linear", value:"LinearLineEdits"},
-        {text:"Radial", value:"RadialLineEdits"},
+        {key:"None", text:"None", value:"NoneLineEdits"},
+        {key:"Linear",text:"Linear", value:"LinearLineEdits"},
+        {key:"Radial",text:"Radial", value:"RadialLineEdits"},
     ],
     borders: [
-        {text:"None", value:"NoneBorders"},
-        {text:"Linear", value:"LinearBorders"},
-        {text:"Radial", value:"RadialBorders"},
+        {key:"None", text:"None", value:"NoneBorders"},
+        {key:"Linear", text:"Linear", value:"LinearBorders"},
+        {key:"Radial", text:"Radial", value:"RadialBorders"},
     ]
 }
 const fontFamChoices = [
@@ -179,7 +179,7 @@ class SettingsModal extends React.Component {
     }
 
     settingsChanged = (e,data) =>{
-        console.log(data);
+        
         //For this.state.tabActiveIndex:    0 --> General, 1--> Nav bar, 2--> Calculator
         var elementKey = "general";
         if(this.state.tabActiveIndex==0) {
@@ -196,44 +196,60 @@ class SettingsModal extends React.Component {
         }
         
 
-        switch(data) {
+        switch(data.value) {
             
             case "NoneBackground":
                 
-                this.settings[elementKey].backgroundGradient = 'none';
+                this.settings[elementKey].backgroundGradient = null;
+                document.getElementById('backgroundSecondaryColorChanger').disabled = true;
                 break;
             case "LinearBackground":
                 this.settings[elementKey].backgroundGradient = 'linear-gradient';
+                
+                document.getElementById('backgroundSecondaryColorChanger').disabled = false;
+                console.log("here");
                 break;
             case "RadialBackground":
                 this.settings[elementKey].backgroundGradient = 'radial-gradient';
+                document.getElementById('backgroundSecondaryColorChanger').disabled = false;
                 break;
             case "NoneButtons":
-                this.settings[elementKey].buttonsGradient = 'none';
+                this.settings[elementKey].buttonsGradient = null;
+                document.getElementById('buttonsSecondaryColorChanger').disabled = true;
                 break;
             case "LinearButtons":
                 this.settings[elementKey].buttonsGradient = 'linear-gradient';
+                console.log("herwerwr");
+                document.getElementById('buttonsSecondaryColorChanger').disabled = false;
                 break;
             case "RadialButtons":
                 this.settings[elementKey].buttonsGradient = 'radial-gradient';
+                document.getElementById('buttonsSecondarbuttonsSecondaryColorChangeryColorCell').disabled = false;
                 break;
             case "NoneLineEdits":
-                this.settings[elementKey].lineEditsGradient = 'none';
+                this.settings[elementKey].lineEditsGradient = null;
+                document.getElementById('lineEditsSecondaryColorChanger').disabled = true;
+                
                 break;
             case "LinearLineEdits":
                 this.settings[elementKey].lineEditsGradient = 'linear-gradient';
+                document.getElementById('lineEditsSecondaryColorChanger').disabled = false;
                 break;
             case "RadialLineEdits":
                 this.settings[elementKey].lineEditsGradient = 'radial-gradient';
+                document.getElementById('lineEditsSecondaryColorChanger').disabled = false;
                 break;
             case "NoneBorders":
-                this.settings[elementKey].bordersGradient = 'none';
+                this.settings[elementKey].bordersGradient = null;
+                document.getElementById('bordersSecondaryColorChanger').disabled = true;
                 break;
             case "LinearBorders":
                 this.settings[elementKey].bordersGradient = 'linear-gradient';
+                document.getElementById('bordersSecondaryColorChanger').disabled = false;
                 break;
             case "RadialBorders":
                 this.settings[elementKey].bordersGradient = 'radial-gradient';
+                document.getElementById('bordersSecondaryColorChanger').disabled = false;
                 break;
         }
   
@@ -259,23 +275,61 @@ class SettingsModal extends React.Component {
         }
         var element = document.getElementById(elementID)
 
-        if(this.settings[elementKey].color['background']!=null) {element.style.backgroundColor=this.settings[elementKey].color['background']}
+        if(this.settings[elementKey].color['background']!=null) {
+            if(this.settings[elementKey]['backgroundGradient']!=null) {
+                element.style.background = this.settings[elementKey]['backgroundGradient']+"("+this.settings[elementKey].color.background+"," +document.getElementById('backgroundSecondaryColorChanger').value+")";
+            }
+            else {element.style.backgroundColor = this.settings[elementKey].color['background'];}
+
+        }
         if(this.settings[elementKey].color['buttons']!=null) {
-            if(elementID=='cw') {
-                element.style.backgroundColor=this.settings[elementKey].color['background']
-                var buttons = document.getElementsByClassName('calcButton');
+            if(this.settings[elementKey]['buttonsGradient']!=null) {
+                console.log("here");
+                //var buttons = document.getElementsByClassName('calcButton');
+                var buttons = document.getElementsByClassName('button');
+                for(var i=0;i<buttons.length; ++i) {
+                    buttons[i].style.background = this.settings[elementKey]['buttonsGradient']+"("+this.settings[elementKey].color.buttons+"," +document.getElementById('buttonsSecondaryColorChanger').value+")";
+                }
+            }
+            else {
+                //var buttons = document.getElementsByClassName('calcButton');
+                var buttons = document.getElementsByClassName('button');
                 for(var i=0;i<buttons.length; ++i) {
                     buttons[i].style.backgroundColor = this.settings[elementKey].color['buttons'];
                 }
             }
-            
-            
-
         }
-        if(this.settings[elementKey].color['lineEdits']!=null) {}
+        if(this.settings[elementKey].color['lineEdits']!=null) {
+            element.style.backgroundColor=this.settings[elementKey].color['background']
+            console.log(elementKey+' '+this.settings[elementKey]);
+
+            if(this.settings[elementKey]['lineEditsGradient']!=null) {
+                if(elementID=='cw') {
+                    console.log("here");
+                    let answerLine = document.getElementById('answerLine');
+                    console.log(this.settings[elementKey]['lineEditsGradient']+"("+this.settings[elementKey].color.buttons+"," +document.getElementById('lineEditsSecondaryColorChanger').value+")");
+                    answerLine.style.backgroundColor = this.settings[elementKey]['lineEditsGradient']+"("+this.settings[elementKey].color.buttons+"," +document.getElementById('lineEditsSecondaryColorChanger').value+")";
+                    
+                    let equationLineEdit = document.getElementById('equationLineEdit');
+                    equationLineEdit.style.backgroundColor = this.settings[elementKey]['lineEditsGradient']+"("+this.settings[elementKey].color.buttons+"," +document.getElementById('lineEditsSecondaryColorChanger').value+")";
+                }
+                else {
+                    console.log("Specify the object to be edited");
+                }
+            }
+            else {
+                //var buttons = document.getElementsByClassName('calcButton');
+                var paragraphs = document.getElementsByClassName('p');
+                for(var i=0;i<paragraphs.length; ++i) {
+                    paragraphs[i].style.backgroundColor = this.settings[elementKey].color['lineEdits'];
+                }
+            }
+        }
 
         if(this.settings[elementKey].color['borders']!=null) {element.style.border = `1px solid ${this.settings[elementKey].color['borders']}`;}
-        if(this.settings[elementKey].color['backgroundGradient']!=null) {}
+        if(this.settings[elementKey].color['backgroundGradient']!=null) {
+
+        }
         if(this.settings[elementKey].color['buttonsGradient']!=null) {}
         if(this.settings[elementKey].color['lineEditsGradient']!=null) {}
         if(this.settings[elementKey].color['bordersGradient']!=null) {}
@@ -369,7 +423,7 @@ class SettingsModal extends React.Component {
         if(e.target.id=="buttonColorChanger") {
             this.settings[elementKey].color.buttons = e.target.value;
         }
-        if(e.target.id=="lineEditColorChanger") {
+        if(e.target.id=="lineEditsColorChanger") {
             this.settings[elementKey].color.lineEdits = e.target.value;
         }
         if(e.target.id=="borderColorChanger") {
@@ -415,38 +469,53 @@ class SettingsModal extends React.Component {
                         Color
                 </Accordion.Title>
                 <Accordion.Content active={activeIndex === 1}>
-                    <Dropdown text="Presets" icon="caret right"floating labeled button className='presetIcon'>
-                        
-                    </Dropdown>
-                
-                    <Segment.Group>
-                        <Segment className="settingsSubAttr">Background
-                            <input id="backgroundColorChanger" type="color"  onChange={this.colorFieldChange}/>
+                    <Dropdown text="Presets" icon="caret right"floating labeled button className='presetIcon' />
+                    
+                    <Table celled>
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.HeaderCell>Group</Table.HeaderCell>
+                                <Table.HeaderCell>Primary</Table.HeaderCell>
+                                <Table.HeaderCell>Gradient</Table.HeaderCell>
+                                <Table.HeaderCell>Secondary</Table.HeaderCell>
+                            </Table.Row>
+                        </Table.Header>
+
+                        <Table.Body>
+                            <Table.Row>
+                                <Table.Cell>Background</Table.Cell>
+                                <Table.Cell><input id="backgroundColorChanger" type="color"  onChange={this.colorFieldChange}/></Table.Cell>
+                                <Table.Cell><Dropdown placeholder="None"   options={gradientChoices.background} onChange={this.settingsChanged} labeled button /></Table.Cell>
+                                <Table.Cell><input disabled={true} id="backgroundSecondaryColorChanger" type="color"  onChange={this.colorFieldChange}/></Table.Cell>
+                            </Table.Row>
+
+                            <Table.Row>
+                                <Table.Cell>Buttons</Table.Cell>
+                                <Table.Cell><input id="buttonColorChanger" type="color" onChange={this.colorFieldChange}/></Table.Cell>
+                                <Table.Cell><Dropdown placeholder="None"  options={gradientChoices.buttons} onChange={this.settingsChanged} labeled button /></Table.Cell>
+                                <Table.Cell><input disabled={true} id="buttonsSecondaryColorChanger" type="color"  onChange={this.colorFieldChange}/></Table.Cell>
+                            </Table.Row>
+
+                            <Table.Row>
+                                <Table.Cell>Line Edits</Table.Cell>
+                                <Table.Cell><input id="lineEditsColorChanger" type="color" onChange={this.colorFieldChange}/></Table.Cell>
+                                <Table.Cell><Dropdown placeholder="None" options={gradientChoices.lineEdits} onChange={this.settingsChanged} labeled button /></Table.Cell>
+                                <Table.Cell><input disabled={true} id="lineEditsSecondaryColorChanger" type="color"  onChange={this.colorFieldChange}/></Table.Cell>
+                            </Table.Row>
+
+                            <Table.Row>
+                                <Table.Cell>Borders</Table.Cell>
+                                <Table.Cell><input id="borderColorChanger" type="color" onChange={this.colorFieldChange}/></Table.Cell>
+                                <Table.Cell><Dropdown placeholder="None" options={gradientChoices.borders} onChange={this.settingsChanged}  labeled button /></Table.Cell>
+                                <Table.Cell><input disabled={true} id="bordersSecondaryColorChanger" type="color"  onChange={this.colorFieldChange}/></Table.Cell>
+                            </Table.Row>
 
 
-                            <Dropdown text="Gradient"  value={backgroundGradient} options={gradientChoices.background} icon="caret right" floating labeled button>
-                                
-                            </Dropdown>
-                        </Segment>
-                        <Segment className="settingsSubAttr">Buttons
-                            <input id="buttonColorChanger" type="color" onChange={this.colorFieldChange}/>
-                            <Dropdown text="Gradient"  value={buttonsGradient} options={gradientChoices.buttons} icon="caret right" onChange={this.settingsChanged} floating labeled button>
-                                
-                            </Dropdown>
+                        </Table.Body>
+                    </Table> 
 
-                        </Segment>
-                        <Segment className="settingsSubAttr">Line Edits
-                            <input id="lineEditColorChanger" type="color" onChange={this.colorFieldChange}/>
-                            <Dropdown text="Gradient"  value={lineEditsGradient} options={gradientChoices.lineEdits} icon="caret right" onChange={this.settingsChanged} floating labeled button>
-                            </Dropdown>
-                        </Segment>
-                        <Segment className="settingsSubAttr">Borders
-                            <input id="borderColorChanger" type="color" onChange={this.colorFieldChange} />
-                            <Dropdown text="Gradient"  value={bordersGradient} options={gradientChoices.borders} icon="caret right" onChange={this.settingsChanged} floating labeled button>
-                            </Dropdown>
-                        </Segment>
-                    </Segment.Group>
                 </Accordion.Content>
+                
             </Accordion>
         </Segment>
     );
@@ -470,15 +539,14 @@ class SettingsModal extends React.Component {
                         <CloseIcon />
                     </button>
                 </div>
-                <Tab id="settingsTabs"  panes={this.panes} onTabChange={this.handleTabChange}/>
-                <Button id="settingsApplyButton" onClick={(e)=>this.applySettings(e)} >Apply</Button>
+                <Tab className="windowTabs" id="settingsTabs"  panes={this.panes} onTabChange={this.handleTabChange}/>
+                <div className="settingsWindowFooter" >
+                            <Button id="settingsApplyButton" onClick={(e)=>this.applySettings(e)} >Apply</Button>
+                </div>
                 
-                            
-                            
-                        
-
-
-                    
+              
+                
+                
 
             </div>
         );
@@ -486,3 +554,39 @@ class SettingsModal extends React.Component {
 }
 
 export default SettingsModal;
+
+
+
+
+// <Segment.Group className="segmentGroup">
+// <Segment className="subSegmentGroup">
+//     <Header  as='h5'>Background</Header>
+//     <input id="backgroundColorChanger" type="color"  onChange={this.colorFieldChange}/>
+//     <Dropdown placeholder="Gradient"   options={gradientChoices.background} onChange={this.settingsChanged} labeled button />
+        
+   
+// </Segment>
+// <Segment className="subSegmentGroup">
+//     <Header  as='h5'>Buttons</Header>
+//     <input id="buttonColorChanger" type="color" onChange={this.colorFieldChange}/>
+//     <Dropdown placeholder="Gradient"  options={gradientChoices.buttons} onChange={this.settingsChanged} labeled button />
+        
+    
+
+// </Segment>
+// <Segment className="subSegmentGroup">
+//     <Header  as='h5'>Line Edits</Header>
+//     <input id="lineEditColorChanger" type="color" onChange={this.colorFieldChange}/>
+//     <Dropdown placeholder="Gradient" options={gradientChoices.lineEdits} onChange={this.settingsChanged} labeled button />
+    
+// </Segment>
+// <Segment className="subSegmentGroup">
+//     <Header  as='h5'>Borders</Header>
+//     <input id="borderColorChanger" type="color" onChange={this.colorFieldChange} />
+    
+//     <Dropdown placeholder="Gradient" options={gradientChoices.borders} onChange={this.settingsChanged}  labeled button />
+   
+// </Segment>
+
+
+// </Segment.Group>
