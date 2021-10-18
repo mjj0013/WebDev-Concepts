@@ -269,7 +269,7 @@ class PhysicalObject extends GameObject {
             this.parent.contextRef.current.lineTo(this.trueEdges[2].x2, this.trueEdges[2].y2)   //p4
             this.parent.contextRef.current.lineTo(this.trueEdges[3].x1, this.trueEdges[3].y1)   //p4
             this.parent.contextRef.current.lineTo(this.trueEdges[3].x2, this.trueEdges[3].y2)   //p1
-
+            
            
             
             this.parent.contextRef.current.fillStyle = 'hsl('+(this.hue)+',50%,50%)';
@@ -290,12 +290,12 @@ class PhysicalObject extends GameObject {
             var theta = Math.atan((this.parent.yLightSource-this.y)/(this.parent.xLightSource-this.x));
             
             
-
+            
             var gradient = this.parent.contextRef.current.createRadialGradient(this.x,this.y,this.radius,  
-                (this.radius)*Math.cos(theta),
-                (this.radius)*Math.sin(theta),
+                (this.radius)*Math.cos(30),
+                (this.radius)*Math.sin(30),
                 (this.radius)
-                );
+            );
 
             var num_stops = 10;
             var d_offset = this.radius/this.parent.rLightSource;

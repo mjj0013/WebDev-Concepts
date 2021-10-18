@@ -14,10 +14,8 @@ class Game extends React.Component {
     
     constructor(props) {
         super(props);
-        
         this.canvasRef = React.createRef();
         this.contextRef = React.createRef();
-         
         this.draw = this.draw.bind(this);
         this.update = this.update.bind(this);
         this.initWorld = this.initWorld.bind(this);
@@ -37,10 +35,8 @@ class Game extends React.Component {
         this.xChangeLightPosition = this.xChangeLightPosition.bind(this);
         this.yChangeLightPosition = this.yChangeLightPosition.bind(this);
         this.changeBackgroundShades = this.changeBackgroundShades.bind(this);
+        this.resizeButtonClicked = this.resizeButtonClicked.bind(this);
 
-
-
-       
         this.numOfBackgroundShades = 5;
         this.changeGravityDirection = this.changeGravityDirection.bind(this);
         this.physicalObjects = [];
@@ -70,10 +66,80 @@ class Game extends React.Component {
         this.xGlobalForce = 0.0;
         this.yGlobalForce = 0.0;
 
-        
-
-
+        this.closeDragElement = this.closeDragElement.bind(this);
+        this.elementDrag = this.elementDrag.bind(this);
+        this.dragMouseDown = this.dragMouseDown.bind(this);
+        this.makeDraggable = this.makeDraggable.bind(this);
+        this.updateZoom = this.updateZoom.bind(this);
+        this.captureZoomEvent = this.captureZoomEvent.bind(this)
+        this.zoomIntensity = 0.2;
+        this.zoomHasHappened = 0;
+        this.contextCurrentOrigin = {x:0,y:0}
+        this.zoomPos = {x:0, y:0}
+        this.canvasScale = 1;
     }
+
+    closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+
+    elementDrag(e) {    
+        e = e || window.event;
+        e.preventDefault();
+        
+        this.posPrediction.pos1 = this.posPrediction.pos3 - e.clientX;
+        this.posPrediction.pos2 = this.posPrediction.pos4 - e.clientY;
+
+        this.posPrediction.pos3 = e.clientX;
+        this.posPrediction.pos4 = e.clientY;
+
+
+        let gameCanvas = document.getElementById("gameCanvas");
+
+       
+        resizeButton.style.top = (resizeButton.offsetTop - this.posPrediction.pos2) + "px";
+        resizeButton.style.left = (resizeButton.offsetLeft - this.posPrediction.pos1) + "px";
+        
+        
+        gameCanvas.style.height = (gameCanvas.offsetTop - this.posPrediction.pos2) + "px";
+        gameCanvas.style.width = (gameCanvas.offsetLeft - this.posPrediction.pos1) + "px";
+
+
+        let originalCanvasX = gameCanvas.left;
+        let originalCanvasY = gameCanvas.top;
+        console.log(originalCanvasX +"  "+ originalCanvasY)
+
+        let xMag =  (resizeButton.offsetLeft - this.posPrediction.pos1)/(gameCanvas.offsetLeft - this.posPrediction.pos1);
+        let yMag =  (resizeButton.offsetTop - this.posPrediction.pos2)/(gameCanvas.offsetTop - this.posPrediction.pos2);
+        
+        console.log("mags: "+xMag+" "+yMag)
+        if(gameCanvas.top != originalCanvasY) {
+            gameCanvas.style.transform =`scaleY(${yMag})`;
+        }
+        if(gameCanvas.left != originalCanvasX) {
+            gameCanvas.style.transform =`scaleX(${xMag})`;
+        }
+      
+        return false;
+    }
+
+    dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        this.posPrediction.pos3 = e.clientX;
+        this.posPrediction.pos4 = e.clientY;
+        document.onmouseup = this.closeDragElement;
+        document.onmousemove = this.elementDrag;
+    }
+
+    makeDraggable(item_id) {
+        var item = document.getElementById(item_id)
+        this.posPrediction = {pos1:0, pos2:0, pos3: 0, pos4:0}
+        item.onmousedown = this.dragMouseDown;
+    }
+
+
 
     changeHue = (event) =>{
         this.backgroundHue = event.target.value;
@@ -105,11 +171,7 @@ class Game extends React.Component {
         this.addPhysicalObject("user-ellipse",400,400,25,25,0,0,25,'rgb(54,76,24)',true );
         this.addPhysicalObject("user-ellipse",400,75,25,25,0,0,25,'rgb(54,76,24)',true);
         
-
-
         //this.addBackgroundEffect(100,100,0,0,100,25,'rgb(54,76,24)');
-
-
         //by default, select the first object that can be controlled as the current controlled object.
         for(var i=0; i < this.physicalObjects.length; ++i) {
             if(this.physicalObjects.at(i).controllable) {
@@ -149,10 +211,44 @@ class Game extends React.Component {
             console.log("new length: "+ this.physicalObjects.length);
             console.log(this.controlledObjectIndex);
         }
-        //this.renderTable();
-
     }
 
+    captureZoomEvent = (e) => {
+        this.zoomPos.x = e.clientX - this.canvasRef.current.offsetLeft;
+        this.zoomPos.y = e.clientY - this.canvasRef.current.offsetTop;
+
+        this.zoomHasHappened = 1;
+
+        this.zoomDeltaY = e.deltaY
+
+    }
+    updateZoom = () => {
+        let wheelNorm = this.zoomDeltaY < 0 ? 1: -1;
+
+        let zoomVar = Math.exp(wheelNorm*this.zoomIntensity);
+        this.contextRef.current.translate(this.contextCurrentOrigin.x,this.contextCurrentOrigin.y);
+        
+        this.contextCurrentOrigin.x -= this.zoomPos.x/(this.canvasScale*zoomVar) - this.zoomPos.x/this.canvasScale;
+        this.contextCurrentOrigin.y -= this.zoomPos.y/(this.canvasScale*zoomVar) - this.zoomPos.y/this.canvasScale;
+
+        // this.contextRef.current.scale(zoomVar, zoomVar);
+        this.contextRef.current.translate(-this.contextCurrentOrigin.x, -this.contextCurrentOrigin.y);
+        this.canvasScale *= zoomVar;
+       
+
+        
+        console.log("canvas dims: ")
+        // this.canvasWidth *= this.canvasScale;
+        // this.canvasHeight *= this.canvasScale;
+        this.canvasRef.current.width *= this.canvasScale;
+        this.canvasRef.current.height *= this.canvasScale;
+        //this.canvasRef.current.width = 
+        console.log(this.canvasRef.current.width + "  " + this.canvasRef.current.height)
+        // this.clearWorld();
+
+        this.zoomHasHappened = 0;
+        
+    }
     moveDown = () => {
         this.physicalObjects[this.controlledObjectIndex].yVelocity = 
                 this.physicalObjects[this.controlledObjectIndex].yVelocity + this.userExertion;
@@ -160,13 +256,9 @@ class Game extends React.Component {
     };
 
     moveSpin = () => {
-        //++this.physicalObjects[this.controlledObjectIndex].angleIter;
-        //this.physicalObjects[this.controlledObjectIndex].angleOrient = this.physicalObjects[this.controlledObjectIndex].angleIter*(Math.PI/16);
         this.physicalObjects[this.controlledObjectIndex].angularAccel = 60;
         this.physicalObjects[this.controlledObjectIndex].rotating = true;
         //console.log("ang vel:  "+ this.physicalObjects[this.controlledObjectIndex].angularVelocity);
-        
-
     }
    
     moveUp = () => {
@@ -222,27 +314,33 @@ class Game extends React.Component {
     }
     componentDidUpdate = () => {
         this.contextRef.current = this.canvasRef.current.getContext('2d');
-
+        
         setInterval(
             () => {
             this.update();
+            if(this.zoomHasHappened==1) this.updateZoom();
             this.clearWorld();
+            
             this.draw();
         }, 1000/60);
 
     }
     componentDidMount = () => {
-        
+        document.getElementById("gameCanvas").addEventListener("wheel",this.captureZoomEvent);
+        this.makeDraggable('gameCanvas');
         setInterval(
             () => {
             this.update();
+            if(this.zoomHasHappened==1) this.updateZoom();
             this.clearWorld();
+            
             this.draw();
         }, 1000/60);
           
-       
+        
         this.canvasRef.current.addEventListener('mousedown', (e) => {this.mouseClickHandler(this.canvasRef.current,e)});
-        console.log("loaded: "+ localStorage.getItem("first"));
+        
+
         if(localStorage.first==null) {
             console.log("loading for first time");
             localStorage.first ='1';         //the first time loading
@@ -271,6 +369,8 @@ class Game extends React.Component {
             (e) =>{
                 
                 switch(e.code) {
+                    
+
                     case "ArrowLeft":
                         this.moveLeft();
                         break;
@@ -286,6 +386,7 @@ class Game extends React.Component {
                     case "ArrowDown":
                         this.moveDown();
                         break;
+
                     case "KeyR":
                         this.moveSpin();
                         break;
@@ -294,6 +395,13 @@ class Game extends React.Component {
                 }
             }
         );
+        
+        
+        let canvasResizeButton = document.getElementById('gameCanvasResizeButton');
+        let gameCanvas = document.getElementById('gameCanvas');
+        canvasResizeButton.style.top = '83vh';
+        canvasResizeButton.style.left = '75vw';
+
     }
     
     update = () =>{  
@@ -483,7 +591,12 @@ class Game extends React.Component {
         this.numOfBackgroundShades = event.target.value;
     }
 
-    
+    resizeButtonClicked(e) {
+        console.log("resize clicked");
+        const rect = this.canvasRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+    }
 
     render = () =>{
 
@@ -495,9 +608,10 @@ class Game extends React.Component {
                 </Container>
                
                 <Container id="viewAndHeader">
-                    <canvas ref={this.canvasRef} id="graphicsView" width={this.canvasWidth} height={this.canvasHeight}></canvas>
+                    <canvas id="gameCanvas" ref={this.canvasRef} width={this.canvasWidth} height={this.canvasHeight} className="gameCanvas"></canvas>
+                    <div id="gameCanvasResizeButton" className="gameCanvasResizeButton" onFocus={this.resizeButtonClicked} tabIndex="100" />
                 </Container>
-
+                
                 
 
                 <Container id="gameControlPanel">
