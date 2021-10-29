@@ -1,5 +1,3 @@
-
-
 import Layout from '../Layout';
 
 
@@ -11,13 +9,9 @@ class GameObject {
         this.y = y;
         this.xVelocity = xVelocity;
         this.yVelocity = yVelocity;
-
         this.angularVelocity =0;
         this.angularAccel = 0;
-        
         //this.angularVelocity = {x:0.0, y:0.0};
-
-
         this.mass = mass;
         this.collidable=false;
         
@@ -26,5 +20,3 @@ class GameObject {
  
 };
 export default GameObject;
-
-
