@@ -4,7 +4,7 @@ body {
 	font-family: 'Quicksand', sans-serif;
 	font-variant: small-caps;
 	font-size:18px;
-	background-color: #808080;
+	
 	--gradientColor:rgb(107, 76, 219);
 	
 	
@@ -16,12 +16,14 @@ body {
 	left: 0;
 	width: var(--nav-width);
 	height: 100vh;
-	background-color:#222222;
-	
-	
-	
-
+	background-color:#2222229d;
+	z-index:4;
 }
+
+.homeLayout {
+	z-index: 5;
+}
+
 .nav-link {
 	
 	display: block;
@@ -74,13 +76,14 @@ a {
 
 .backgroundCanvas {
 	position:absolute;
-	z-index:4;
-	top:0%;
+	z-index:3;
+	top:0;
+	left:0;
 
-	margin-left:25px;
-	margin-right:25px;
-	
-	margin-top: 50px;
+	width:100vw;
+	height:100vh;
+
+	filter:brightness(.5);
 	
 }
 
@@ -174,7 +177,31 @@ a {
 #viewAndHeader {
 	margin-right:auto;
 	margin-left: 25px;
+	
+	/* width:1800px; */
+	overflow:hidden;
+	
 }
+
+#gameCanvas {
+	display:block;
+	visibility:hidden;
+
+}
+
+
+#gameSVG {
+	/* top:500px; */
+	
+	width:3000px;
+	height:2000px;
+	/* position:absolute; */
+	position:fixed;
+	/* top:0px;
+	left:0px; */
+
+}
+
 
 select {
 	width: 100px;
@@ -182,11 +209,8 @@ select {
 #addOrbButton {
 	width: 75px;
 	height: 75px;
-	border-radius:75%;
-	
+	border-radius:75%;	
 	box-shadow: 0 0 0 1pt grey;
-
-	
 
 	margin-bottom: 10px;
 	padding: 20px;
@@ -194,7 +218,6 @@ select {
 
 	z-index: 0;
 	background: radial-gradient(circle at 50%, rgba(20, 8, 230,1) 25%, rgba(74, 47, 197,1) 50% rgba(110, 110, 196,1) 80%, rgba(144, 184, 192,1) 100%);
-	
 }
 
 
@@ -224,6 +247,53 @@ select {
 		background: radial-gradient(circle at 50%, rgba(20, 8, 230,1) 25%, 		rgba(74, 47, 197,1) 50% , 	rgba(110, 110, 196,1) 80%, rgba(144, 184, 192,1) 100%);
 	}	
 }
+
+
+.gameCanvas {
+	--gameCanvasWidth: 800px;
+	--gameCanvasHeight: 600px;
+	width:var(--gameCanvasWidth);
+	height:var(--gameCanvasHeight);
+	display:flex;
+	position:absolute;
+	top:25vh;
+	left:25vw;
+	
+	
+	
+}
+
+.gameCanvas:hover {
+	cursor:grab;
+
+}
+ 
+
+.gameCanvasResizeButton {
+	
+	width:25px;
+	height:25px;
+	
+	cursor:move;
+	z-index:9;
+	background-color: gray;
+	position:absolute;
+	/* position:absolute;
+	left:calc(var(--gameCanvasWidth)+1125px);
+	top:calc(var(--gameCanvasHeight)+675px); */
+	border: 1px solid black ;
+	
+	
+}
+
+
+
+
+
+
+/* .gameCanvasResizeButton:focus {
+
+} */
 
 
 
