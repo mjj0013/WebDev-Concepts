@@ -5,11 +5,15 @@ import {Table, Header, Container, Divider, Icon, ItemContent } from 'semantic-ui
 import Layout from '../Layout';
 import "regenerator-runtime/runtime";
 
+
+
+import {Mesh,Polygon} from './Mesh';
 import BackgroundEffect from './BackgroundEffect';
 import PhysicalObject from './PhysicalObject';
 //import ObjTable from './ObjTable.js';
 import "../utility.js"
 import { getRandomInt, crossProduct } from '../utility.js';
+import { intersection } from 'lodash';
 class Game extends React.Component {
     
     constructor(props) {
@@ -57,7 +61,7 @@ class Game extends React.Component {
         this.physicalObjectMap = [];
 
         this.insertRandomizedOrb= this.insertRandomizedOrb.bind(this);
-
+        this.adjustBallsVisibility = this.adjustBallsVisibility.bind(this);
 
         this.canvasWidth = 3000;
         this.canvasHeight = 2000;
@@ -97,11 +101,13 @@ class Game extends React.Component {
         this.canvasScale = 1;
 
         this.generateRandomMesh = this.generateRandomMesh.bind(this);
-
+        this.toggleAnimateVertices = this.toggleAnimateVertices.bind(this);
         this.isPointInPath = this.isPointInPath.bind(this);
         this.regionPts = [];
         this.regionSides = [];
         this.ptIdxToEdgeIdx = {}
+
+        this.M = new Mesh();
     }
 
 
@@ -134,8 +140,11 @@ class Game extends React.Component {
     }
 
     elementDrag(e) {    
+        //console.log(this.currentlyDragging, e.target.id);
+        
         if(!(e.target.id.substr(0,2)=='pt' || e.target.id=="gameSVGBackground")) return e;
         e = e || window.event;
+        e.preventDefault();
         console.log("dragging " + e.target.id);
         // var gameSVG = document.getElementById('gameSVG');
 
@@ -147,25 +156,48 @@ class Game extends React.Component {
        
         if(this.dragStart) {
             var pt = this.getTransformedPt(this.lastZoom.x, this.lastZoom.y);
+            
             // this.dragDisplacement.x += (pt.x-this.dragStart.x)/4;
             // this.dragDisplacement.y += (pt.y-this.dragStart.y)/4;
             
+
             if(e.target.id=='gameSVGBackground') {
                 this.panSVG((pt.x-this.dragStart.x)/4, (pt.y-this.dragStart.y)/4)
             }
             else if(e.target.id.substr(0,2)=='pt') {
-                let ptIndex = parseInt(e.target.id.substr(2));
-                console.log(ptIndex);
-                this.regionPts[ptIndex].x = pt.x;
-                this.regionPts[ptIndex].y = pt.y;
-                let d =  `M ${this.regionPts[ptIndex].x},                               ${this.regionPts[ptIndex].y}`;
-                    d += `L ${this.regionPts[this.ptData[ptIndex].connections[0]].x}, ${this.regionPts[this.ptData[ptIndex].connections[0]].y}`
-                    d += `L ${this.regionPts[this.ptData[ptIndex].connections[1]].x}, ${this.regionPts[this.ptData[ptIndex].connections[1]].y}`
-                    d += `L ${this.regionPts[ptIndex].x}, ${this.regionPts[ptIndex].y}`;
-
-                e.target.setAttributeNS(null,'d', d);
                 e.target.setAttributeNS(null,'cx', pt.x);
                 e.target.setAttributeNS(null,'cy', pt.y);
+                let ptIndex = parseInt(e.target.id.substr(2));
+               
+                this.M.pts[ptIndex].x = pt.x;
+                this.M.pts[ptIndex].y = pt.y;
+              
+                for(let edge=0; edge < this.M.ptData[ptIndex].edgeIDs.length;++edge) {
+                    let assocEdge = this.M.ptData[ptIndex].edgeIDs[edge];
+                    //var assocEdgeElement = document.getElementById(assocEdge);
+                    
+                    let ptIds = assocEdge.replace('edge','').split('_');
+                    let ptA = parseInt(ptIds[0]);
+                    let ptB = parseInt(ptIds[1]);
+                    
+                    var d=``
+                    
+                    if(ptIds[1]== ptIndex) {
+                        //console.log('pt');
+                        //the vertex being dragged is 'Y' in the 'edgeX_Y' naming convention, so change of coordinates that one  only
+                        d = `M ${this.M.pts[ptA].x},${this.M.pts[ptA].y}`
+                        d += `L ${this.M.pts[ptB].x},${this.M.pts[ptB].y}`
+                    }
+                    else {
+                        //the vertex being dragged is 'X' in the 'edgeX_Y' naming convention, so change  coordinates of that one only
+                        d = `M ${this.M.pts[ptA].x},${this.M.pts[ptA].y}`
+                        d += `L ${this.M.pts[ptB].x},${this.M.pts[ptB].y}`
+                    }
+                    //console.log('d',d);
+                    document.getElementById(assocEdge).setAttribute('d',d);
+                   
+                }
+                
             }
             
         }
@@ -176,33 +208,35 @@ class Game extends React.Component {
 
     dragMouseDown(e) {
         e = e || window.event;
-        //e.preventDefault();
-        console.log(e.target.id);
-
-        if(this.currentlyDragging==null) this.currentlyDragging = e.target.id
-        else return e.preventDefault() && false;
-        if(e.target.id=="gameSVGBackground") {
-            var gameSVG = document.getElementById("gameSVG");
-            gameSVG.style.cursor = 'grabbing'
-        }
         
+   
+        if(this.currentlyDragging==null) this.currentlyDragging = e.target.id;
+        else if(this.currentlyDragging!= e.target.id) {
+            return;
+             // return e;
+         }
+        
+
+       
+
         this.lastZoom.x = e.offsetX;
         this.lastZoom.y = e.offsetY;
 
-        this.dragStart = this.getTransformedPt(this.lastZoom.x, this.lastZoom.y);
-        
-        // e.target.onmouseup = this.closeDragElement;
-        // e.target.onmousemove= this.elementDrag;
+        if(e.target.id=="gameSVGBackground") {
+            var gameSVG = document.getElementById("gameSVG");
+            gameSVG.style.cursor = 'grabbing'
+            this.dragStart = this.getTransformedPt(this.lastZoom.x, this.lastZoom.y);
+        }
 
         document.onmouseup = this.closeDragElement;
         document.onmousemove = this.elementDrag;
-
 
         return e.preventDefault() && false;
     }
 
     makeDraggable(item_id) {
         var item = document.getElementById(item_id)
+        
         item.onmousedown = this.dragMouseDown;
     }
 
@@ -240,7 +274,6 @@ class Game extends React.Component {
     
     addPhysicalObject = (obj_type,x,y, width, height,dx,dy,mass,color,isNew=true) =>{
         ++this.controlledObjectIndex;
-      
         var obj = {
             index:this.controlledObjectIndex,
             x:x,
@@ -256,15 +289,8 @@ class Game extends React.Component {
         this.physicalObjectMap.push(obj);
         let newObj =  new PhysicalObject(this, this.contextRef.current, obj_type, "circle"+obj.index, x, y, width, height, dx,dy,mass,null);
         this.physicalObjects.push(newObj);
-        if(isNew) {
-            localStorage.physicalObjectMap = JSON.stringify(this.physicalObjectMap);
-           
-            //this.physicalObjects.push(newObj);
-        }
-        else {
-            console.log("new length: "+ this.physicalObjects.length);
-            console.log(this.controlledObjectIndex);
-        }
+        if(isNew) { localStorage.physicalObjectMap = JSON.stringify(this.physicalObjectMap); }
+        
         var svg_ns = "http://www.w3.org/2000/svg";
        
         let circleGroup = document.getElementById("circleGroup");
@@ -390,6 +416,12 @@ class Game extends React.Component {
         var gameSVG = document.getElementById("gameSVG")
         gameSVG.addEventListener("wheel",this.captureZoomEvent,false);
         gameSVG.addEventListener("DOMMouseScroll", this.captureZoomEvent,false);
+        gameSVG.addEventListener("contextmenu", e => e.preventDefault());           //prevent context menu on right click, only for gameSVG 
+
+        // var testResult = this.M.hasIntersection2D([{x:7,y:7}, {x:-4,y:-4}], [{x:4,y:4}, {x:-2,y:-6}])
+        // console.log('testResult',testResult)
+
+        
 
         console.log('svgw', gameSVG.clientWidth)
         //this.makeDraggable('gameCanvas');
@@ -397,6 +429,7 @@ class Game extends React.Component {
         setInterval(
             () => {
             this.update();
+            this.M.update();
             this.draw();
         }
         , 1000/60);
@@ -428,7 +461,7 @@ class Game extends React.Component {
                 if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
                     e.preventDefault();
                 }
-                if(e.code=='Space') {this.generateRandomMesh(5);}
+                if(e.code=='Space') {this.generateRandomMesh(100,2);}
                 this.moveObj(e.code);
             }
         );
@@ -576,113 +609,187 @@ class Game extends React.Component {
         }
     }
     generateRandomMesh = (numPts) => {
-        var polygons = [];  //just triangles for now
-        var lines = [];
+       
+        //var M = new Mesh();
+        //var polygons = [];  //just triangles for now
         this.ptData = [];    //each index is the index of the pt
-        for(let i=0; i < numPts;++i) {
-            let ptExists = true;
-            let x,y;
-            while(ptExists) {
-                x = getRandomInt(0, 800);
-                y = getRandomInt(0, 600);
-                ptExists = this.regionPts.includes({x:x, y:y});
-            }
 
-            this.regionPts.push({x:x, y:y});
+        //generate random points
+        for(let i=0; i < numPts;++i) {
+            let isNewPt = false;
+            let x,y;
+            while(!isNewPt) {  
+                let ptExists = false;
+                x = getRandomInt(0, 3000);
+                y = getRandomInt(0, 2000);
+                for(let i=0; i < this.M.pts.length;++i) {
+                    if(this.M.pts[i].x==x && this.M.pts[i].y==y) {
+                        ptExists = true;
+                        break;
+                    }
+                }
+                if(!ptExists) isNewPt = true;
+            }
+        
+            this.M.pts.push({x:x, y:y});
+            //this.regionPts.push({x:x, y:y});
         }
         
-        for(let i=0; i < this.regionPts.length; ++i) {
-            let thisPt = this.regionPts[i];
+
+        //find closest points for each point
+        for(let i=0; i < this.M.pts.length; ++i) {
+            let thisPt = this.M.pts[i];
             let closestPts = [];
-
-            for(let j=0; j < this.regionPts.length; ++j){
+            for(let j=0; j < this.M.pts.length; ++j){
                 if(j==i) continue;
-                let otherPt =  this.regionPts[j];
-
+                let otherPt =  this.M.pts[j];
                 let squaredDist = (thisPt.x-otherPt.x)*(thisPt.x-otherPt.x) + (thisPt.y-otherPt.y)*(thisPt.y-otherPt.y);
                 closestPts.push({index:j,squaredDist:squaredDist});
             }
             closestPts.sort(function(a,b) { return a.squaredDist - b.squaredDist;  })
-            this.ptData.push({index:i, closestPts:closestPts, connections:[]});
-               
+            this.M.ptData.push({index:i, closestPts:closestPts, connections:[], edgeIDs:[]});
         }
-
-        for(let a=0; a < this.ptData.length; ++a) {
-            //  this.ptData[a].closestPts[0] ===> closest point
-            //  this.ptData[a].closestPts[numPts-1] ==> farthest point
-            let b=0;
-            let cycle_n=1;
-            while(this.ptData[a].connections.length<2) {
-                if(a==b) {
-                    b = (b+1)%this.ptData[a].closestPts.length;
-                    continue;
+        
+        //connect points
+        for(let a=0; a < this.M.pts.length; ++a) {
+            //  closestPts[0] ===> closest point
+            //  closestPts[numPts-1] ==> farthest point
+            
+            //first try this: find set-intersections of the top 5 closest points to point A
+            let aTop5 = this.M.ptData[a].closestPts.map(x=>{return x.index;}).slice(0,4);
+            let bTop5 = this.M.ptData[aTop5[0]].closestPts.map(x=>{return x.index;}).slice(0,4);
+            let cTop5 = this.M.ptData[aTop5[1]].closestPts.map(x=>{return x.index;}).slice(0,4);
+            let dTop5 = this.M.ptData[aTop5[2]].closestPts.map(x=>{return x.index;}).slice(0,4);
+         
+            let commonTopPts = aTop5.concat(bTop5,cTop5,dTop5);
+            commonTopPts = commonTopPts.filter(p => aTop5.includes(p));
+            commonTopPts = commonTopPts.filter(p => bTop5.includes(p));
+            commonTopPts = commonTopPts.filter(p => cTop5.includes(p));
+            commonTopPts = commonTopPts.filter(p => dTop5.includes(p));
+            commonTopPts = commonTopPts.concat(aTop5);
+            console.log('commonTopPts',commonTopPts);
+            
+            for(let p=0; p < commonTopPts.length; ++p) {
+                for(let p2=0; p2 < commonTopPts.length; ++p2) {
+                    if(p==p2) continue;
+                    if(commonTopPts[p]==commonTopPts[p2]) continue;
+            
+                    if(!this.M.edgeExists(commonTopPts[p],commonTopPts[p2])) {
+                        if(this.M.evalNewEdge([this.M.pts[commonTopPts[p]],  this.M.pts[commonTopPts[p2]]])) {
+                            this.M.ptData[commonTopPts[p2]].connections.push(commonTopPts[p]);                 //add node a to node b's connections 
+                            this.M.ptData[commonTopPts[p]].connections.push(commonTopPts[p2]);   //add node b to node a's connections 
+                            this.M.edges.push({id:`edge${commonTopPts[p]}_${commonTopPts[p2]}`, data:[commonTopPts[p],commonTopPts[p2]]});    //add new edge to M.edges
+                           
+                            //makes it possible to adjust associated edges whenever a vertex is dragged
+                            if(!this.M.ptData[commonTopPts[p]].edgeIDs.includes(`edge${commonTopPts[p]}_${commonTopPts[p2]}`) && !this.M.ptData[commonTopPts[p]].edgeIDs.includes(`edge${commonTopPts[p2]}_${commonTopPts[p]}`)) {
+                                this.M.ptData[commonTopPts[p]].edgeIDs.push(`edge${commonTopPts[p]}_${commonTopPts[p2]}`);
+                            }
+                            if(!this.M.ptData[commonTopPts[p2]].edgeIDs.includes(`edge${commonTopPts[p]}_${commonTopPts[p2]}`) && !this.M.ptData[commonTopPts[p2]].edgeIDs.includes(`edge${commonTopPts[p2]}_${commonTopPts[p]}`)) {
+                                this.M.ptData[commonTopPts[p2]].edgeIDs.push(`edge${commonTopPts[p]}_${commonTopPts[p2]}`);
+                            }               
+                        }
+                    }
                 }
-
-                let pt = this.ptData[this.ptData[a].closestPts[b].index];
-                if(cycle_n==1 && pt.connections.length<2) {
-                    pt.connections.push(a);
-                    this.ptData[a].connections.push(b);
-                    lines.push([a,b]);
-                    // if(lines.find(l=>l[0]==b && l[1]==a)==undefined) {
-                    //     lines.push([a,b]);
-                    // }
-
-                    
-                }
-                else if(cycle_n>1) {
-                    pt.connections.push(a);
-                    this.ptData[a].connections.push(b);
-                    lines.push([a,b]);
-                    // if(lines.find(l=>l[0]==b && l[1]==a)==undefined) {
-                    //     lines.push([a,b]);
-                    // }
-                }
-                if( (b)%this.ptData[a].closestPts.length == 0 ) ++cycle_n;
-                b = (b+1)%this.ptData[a].closestPts.length;
             }
         }
-        console.log('lines', lines);
-        var svg_ns = "http://www.w3.org/2000/svg";
         
-        for(let p=0; p < this.regionPts.length;++p) {
-            
-            let d = `M ${this.regionPts[p].x}, ${this.regionPts[p].y}`;
-                d += `L ${this.regionPts[this.ptData[p].connections[0]].x}, ${this.regionPts[this.ptData[p].connections[0]].y}`
-                d += `L ${this.regionPts[this.ptData[p].connections[1]].x}, ${this.regionPts[this.ptData[p].connections[1]].y}`
-                d += `L ${this.regionPts[p].x}, ${this.regionPts[p].y}`;
+        //console.log('numConnections',numConnections)
 
+        //handle stragglers
+        this.M.handleStragglers();
+        //this.M.depthFirstSearch();
+        
+       
 
-            let regionGroup = document.getElementById("regionGroup");
-            let newPath = document.createElementNS(svg_ns,'path');
-            newPath.setAttributeNS(null,'id',"path"+p);
-            newPath.setAttributeNS(null,'d',d);
-            newPath.setAttributeNS(null,'fill','transparent');
-            //newPath.setAttributeNS(null,'shape-rendering', 'crispEdges')
-            //newPath.setAttributeNS(null,'stroke-width', 5);
-           
-            newPath.setAttributeNS(null,'stroke', 'black');
-            regionGroup.appendChild(newPath);
-
-            let newPt = document.createElementNS(svg_ns,'circle');
+        let regionGroup = document.getElementById("regionGroup");
+        for(let p=0; p < this.M.pts.length;++p) {
+            let newPt = document.createElementNS("http://www.w3.org/2000/svg",'circle');
             newPt.setAttributeNS(null,'id','pt'+p);
-            newPt.setAttributeNS(null,'cx', this.regionPts[p].x);
-            newPt.setAttributeNS(null,'cy', this.regionPts[p].y);
-            newPt.setAttributeNS(null,'r', 5);
+            newPt.setAttributeNS(null,'cx', this.M.pts[p].x);
+            newPt.setAttributeNS(null,'cy', this.M.pts[p].y);
+            newPt.setAttributeNS(null,'r', 6);
             newPt.setAttributeNS(null,'fill', 'black');
-            newPt.addEventListener('click',this.dragMouseDown);
+
+            // let newMovement = document.createElementNS("http://www.w3.org/2000/svg",'animateMotion');
+            // newMovement.setAttribute("dur","10s");
+            // newMovement.setAttribute("repeatCount","indefinite");
+            // newMovement.setAttribute("path","m20,50 c20,-50 180,150 180,50 c180-50 20,150 20,50 z");
+
            
 
-            //newPt.setAttributeNS(null,'text',`${p}`)
-            //newLabel.appendChild(document.createTextNode(`${p}`));
-            //<text x="50%" y="50%" text-anchor="middle" stroke="#51c5cf" stroke-width="2px" dy=".3em">Look, I’m centered!Look, I’m centered!</text>
-            
+            //newPt.appendChild(newMovement);
+            newPt.onmousedown = this.dragMouseDown;
             regionGroup.appendChild(newPt);
-            //regionGroup.appendChild(newLabel);
-
         }
 
+        var edgeCounter = [];
+        for(let e=0; e < this.M.edges.length;++e) {
+            if(!edgeCounter.includes(this.M.edges[e].id)) edgeCounter.push(this.M.edges[e].id);
+            else continue;
+            let a = this.M.pts[this.M.edges[e].data[0]]
+            let b = this.M.pts[this.M.edges[e].data[1]]
+            let d  = ``;
+            d += `M ${a.x}, ${a.y}`;
+            d += `L ${b.x}, ${b.y}`;
+            //d += `S 20,50,${b.x}, ${b.y}`;
+            let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
+           
+            newPolygon.setAttributeNS(null,'id',this.M.edges[e].id);
+            newPolygon.setAttributeNS(null,'d',d);
+            newPolygon.setAttributeNS(null,'fill','transparent');
+            
+            newPolygon.setAttributeNS(null,'stroke', 'black');
+            newPolygon.onmousedown = (e) =>{console.log(e.target.id)}
+            regionGroup.appendChild(newPolygon);
+        
+        }
+        console.log('this.M.edges', this.M.edges)
 
+        //track polygons in mesh
+        // for(let p=0; p < this.M.ptData.length;++p) {            //any Point A
+        //     let pt = this.M.ptData[p];
+        //     let ptNeighbors = pt.connections;
+
+        //     for(let p2=0; p2 < ptNeighbors.length; ++p2) {      //any of Point A's connections, Point B
+        //         let otherPt = this.M.ptData[ptNeighbors[p2]];
+        //         let otherPtNeighbors = otherPt.connections;
+
+        //         for(let p3=0; p3 < otherPtNeighbors.length; ++p3) {     //Point B's connections (exclude Point A)
+        //             if(otherPtNeighbors[p3]==pt.index) continue;
+                    
+        //             let distantPt = this.M.ptData[otherPtNeighbors[p3]];
+        //             let distantPtNeighbors = distantPt.connections;
+
+        //             if(distantPtNeighbors.includes(pt.index)) {    //loop completed as a triangle
+        //                 //console.log('polygon', pt, otherPt, distantPt)
+        //                 //let polyObj = new Polygon;
+
+        //                 let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
+        //                 newPolygon.setAttributeNS(null,'id',`polygon${pt.index}_${otherPt.index}_${distantPt.index}`);
+        //                 let d = `
+        //                     M ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
+        //                     L ${this.M.pts[otherPt.index].x},${this.M.pts[otherPt.index].y}
+        //                     L ${this.M.pts[distantPt.index].x},${this.M.pts[distantPt.index].y}
+        //                     L ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
+        //                 `
+
+        //                 newPolygon.setAttributeNS(null,'d',d);
+        //                 //let hue = getRandomInt(0,355);
+        //                 let hue = 220;
+        //                 let sat = getRandomInt(0,100);
+        //                 let light = getRandomInt(0,100);
+        //                 // newPolygon.setAttributeNS(null,'fill',`hsla(${hue},50%,50%, .5)`);
+        //                 //newPolygon.setAttributeNS(null,'fill',`hsla(${hue},${sat}%,${light}%,.5)`);
+        //                 newPolygon.setAttributeNS(null,'fill',`hsl(${hue},${sat}%,${light}%)`);
+        //                 newPolygon.setAttributeNS(null,'stroke', 'black');
+        //                 regionGroup.appendChild(newPolygon); 
+        //             }
+        //         }
+        //     }
+        // }
     }
+
+
     isPointInPath(pt, polygon) {
         var num = polygon.length;
         let j = num - 1;
@@ -692,7 +799,10 @@ class Game extends React.Component {
             
             if((polygon[i].y > pt.y) != (polygon[j].y > pt.y) ) {
                 let slope = (pt.x-polygon[i].x)*(polygon[j].y-polygon[i].y) - (polygon[j].x-polygon[i].x)*(pt.y-polygon[i].y);
-                if(slope==0) return true;
+                if(slope==0) {
+                    console.log("point intersects")
+                    return true;
+                }
                 if((slope < 0) != (polygon[j].y < polygon[i].y)) result=!result;
             }
             j=i;
@@ -701,24 +811,24 @@ class Game extends React.Component {
         }
         return result;
     }
-    
-    
+    adjustBallsVisibility(e) {
+        if(e.target.textContent.substr(0,4)=="Hide") {
+            //e.target.setAttribute('textContent')
+            e.target.textContent = "Show orbs";
+            document.getElementById("circleGroup").setAttribute("visibility","hidden");
 
-    // <Container id="viewAndHeader">
-    //     <canvas id="gameCanvas"  ref={this.canvasRef} width={this.canvasWidth} height={this.canvasHeight} className="gameCanvas"></canvas>
-    // </Container>
-    //<path d="M140 20C73 20 20 74 20 140c0 135 137 170 228 303 88-132 229-173 229-303 0-66-54-120-120-120-48 0-90 28-109 69-19-41-60-69-108-69z" stroke="black" fill="transparent" />
-    // <path d="M 10 10 C 20 20, 40 20, 50 10" stroke="black" fill="transparent"/>
-                    
-    // <polyline points="60, 110 65, 120 70, 115 75, 130 80, 125 85, 140 90, 135 95, 150 100, 145"/>
-    // <path fill="red" stroke="red" d="
-    //                         M 500,800
-    //                         C 30,90  559,100  40,20 
-    //                         L 45, 25
-    //                         C 40,20  90,35  700,70 
-    //                         C 400,200  100,100  500,800 
-    //                         "
-    //                     />
+        }
+        else {
+            e.target.textContent = "Hide orbs";
+            document.getElementById("circleGroup").setAttribute("visibility","visible");
+        }
+        console.log(e.target.textContent);
+    }
+    toggleAnimateVertices(e) {
+        this.M.animateMesh = !this.M.animateMesh;
+
+    }
+
     render = () =>{
 
         return (
@@ -726,34 +836,44 @@ class Game extends React.Component {
                 <Container>
                     <Header as="h3">Another header</Header>
                 </Container>
-                <svg id="gameSVG" viewBox='0 0 3000 2000' ref={this.svgRef} width={this.canvasWidth} height={this.canvasHeight} xmlns="http://www.w3.org/2000/svg"> 
-                    <rect id="gameSVGBackground" width="100%" height="100%" fill='grey' />
-                    <g id="regionGroup" transform="matrix(1 0 0 1 0 0)">
-                        
-                    </g>
-                    <g id="circleGroup" transform="matrix(1 0 0 1 0 0)" />
-                </svg>
+                <div id="viewAndPanel">
+                    <svg id="gameSVG" viewBox='0 0 3000 2000' ref={this.svgRef} width={this.canvasWidth} height={this.canvasHeight} xmlns="http://www.w3.org/2000/svg"> 
+                        <rect id="gameSVGBackground" width="100%" height="100%" fill='grey' />
+                        <g id="regionGroup" transform="matrix(1 0 0 1 0 0)">
+                            
+                        </g>
+                        <g id="circleGroup" transform="matrix(1 0 0 1 0 0)" />
+                    </svg>
 
-                <Container id="gameControlPanel">
-                    <button id="addOrbButton" onClick={this.insertRandomizedOrb} >
-                        <Icon name='add' />
-                    </button> 
-                    <Divider />
-                    <div>
-                        <label for="gravityDirection">Tilt</label>
-                        <select name="gravityDirection" id="gravityDirection" onChange={this.changeGravityDirection}>
-                            <option value="None">None</option>
-                            <option value="Up">Up</option>
-                            <option value="Down">Down</option>
-                            <option value="Left">Left</option>
-                            <option value="Right">Right</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="hueRange">Hue</label>
-                        <input type="range" min="0" max="360" id="hueRange" onInput={this.changeHue}></input>
-                    </div>
-                </Container>      
+                    <Container id="gameControlPanel">
+                        <button id="addOrbButton" onClick={this.insertRandomizedOrb} >
+                            <Icon name='add' />
+                        </button> 
+                        
+                        <Divider />
+                        <div>
+                            <button id="ballsVisibilityButton" onClick = {this.adjustBallsVisibility}>Hide orbs</button>
+                        </div>
+                        <div>
+                            <label for="animateVertices">Mesh:</label>
+                            <button id="animateVerticesButton" onClick = {this.toggleAnimateVertices}>Toggle Animation</button>
+                        </div>
+                        <div>
+                            <label for="gravityDirection">Tilt</label>
+                            <select name="gravityDirection" id="gravityDirection" style={{width:75}} onChange={this.changeGravityDirection}>
+                                <option value="None">None</option>
+                                <option value="Up">Up</option>
+                                <option value="Down">Down</option>
+                                <option value="Left">Left</option>
+                                <option value="Right">Right</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="hueRange">Hue</label>
+                            <input type="range" min="0" max="360" id="hueRange" onInput={this.changeHue} style={{width:75}}></input>
+                        </div>
+                    </Container>      
+                </div>
             </Layout>
         );
     }
