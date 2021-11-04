@@ -159,20 +159,7 @@ a {
 }
 
 
-#gameControlPanel {
-	box-shadow:10px 5px 5px black; 
-	display: grid;
-	position: absolute;
-	top:50%;
-	width: 200px;
-	right:5%;
-	margin-right:25px;
-	outline-style: inset; 
-	
-	
-	
-	
-}
+
 
 #viewAndHeader {
 	margin-right:auto;
@@ -207,13 +194,13 @@ select {
 	width: 100px;
 }
 #addOrbButton {
-	width: 75px;
-	height: 75px;
+	width: 55px;
+	height: 55px;
 	border-radius:75%;	
 	box-shadow: 0 0 0 1pt grey;
 
 	margin-bottom: 10px;
-	padding: 20px;
+	padding: 15px;
 	text-align: center;
 
 	z-index: 0;
@@ -256,8 +243,8 @@ select {
 	height:var(--gameCanvasHeight);
 	display:flex;
 	position:absolute;
-	top:25vh;
-	left:25vw;
+	/* top:25vh;
+	left:25vw; */
 	
 	
 	
@@ -285,7 +272,32 @@ select {
 	
 	
 }
+#gameControlPanel {
+	/* box-shadow:10px 5px 5px black;  */
+	display: grid;
+	position: absolute;
+	/* position: relative;
+	top:0px;
+	left:0px; */
+	top:50%;
+	width: 100px;
+	left:25%;
+	margin-right:25px;
+	/* outline-style: inset;  */
+	fill: rgba(18, 25, 32, 0.75);
+	
+	
+	
+	
+	
+}
 
+
+#viewAndPanel {
+	position:absolute;
+	
+	left:15vw;
+}
 
 
 

@@ -25,6 +25,9 @@ export function loadTextFile(e) {
 
     
 }
+export function det(a,b,c,d) {
+    return a*d - b*c;
+}
 
 export function crossProduct(vectA, vectB) {
     let vectA_dx = vectA[1][0]-vectA[0][0];
