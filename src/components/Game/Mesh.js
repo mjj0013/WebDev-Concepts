@@ -15,39 +15,39 @@ export class Mesh {
         this.handleStragglers = this.handleStragglers.bind(this);
 
         this.depthFirstSearch = this.depthFirstSearch.bind(this);
+        this.DFS = this.DFS.bind(this);
+        this.visitedDFS = [];
+        this.cyclesDFS = [];
         this.update = this.update.bind(this);
-
+        
 
         //this.ptAnimations = [5,5,5,5,5,5,3,3,3,3,3,3,3,3,3,3];
 
 
         this.animateMesh = false;
+        
        
     }
+
+
+    
 
 
     update() {
         if(this.animateMesh) {
             for(let ptIndex=0; ptIndex < this.pts.length; ++ptIndex) {
-
                 if(getRandomInt(0,2)==1) {
-                    this.pts[ptIndex].x += getRandomInt(-8,8);
-                    this.pts[ptIndex].y += getRandomInt(-8,8);
+                    this.pts[ptIndex].x += getRandomInt(-8,8)*Math.exp(1/5);
+                    this.pts[ptIndex].y += getRandomInt(-8,8)*Math.exp(1/5);
                     document.getElementById("pt"+ptIndex).setAttribute("cx", this.pts[ptIndex].x);
                     document.getElementById("pt"+ptIndex).setAttribute("cy", this.pts[ptIndex].y);
                 }
-                
-                
-
                 for(let edge=0; edge < this.ptData[ptIndex].edgeIDs.length;++edge) {
                     let assocEdge = this.ptData[ptIndex].edgeIDs[edge];
-                    
                     let ptIds = assocEdge.replace('edge','').split('_');
                     let ptA = parseInt(ptIds[0]);
                     let ptB = parseInt(ptIds[1]);
-                    
                     var d=``
-                    
                     if(ptIds[1]== ptIndex) {
                         //the vertex being dragged is 'Y' in the 'edgeX_Y' naming convention, so change of coordinates that one  only
                         d = `M ${this.pts[ptA].x},${this.pts[ptA].y}`
@@ -59,9 +59,10 @@ export class Mesh {
                         d += `L ${this.pts[ptB].x},${this.pts[ptB].y}`
                     }
                     document.getElementById(assocEdge).setAttribute('d',d);
-                
                 }
             }
+
+           
         }
         
     }
@@ -190,70 +191,153 @@ export class Mesh {
             }
         }
     }
+    DFS(index,path) {
+        var subPath =Array.from(path);     
+        //var subPath = path;
+        this.visitedDFS[index] = 1;
+        if(subPath.length==0) {       //root vertex
+            
+            subPath.push(index)
+            for(let i=0; i < this.ptData[index].connections.length;++i) {    //immediate connections of root vertex
+                //if(this.ptData[index].connections[i]==index) continue;
+                //if(this.visitedDFS[this.ptData[index].connections[i]] == 1) continue;
+                this.visitedDFS[this.ptData[index].connections[i]] = 1;
+                //subPath.push(this.ptData[index].connections[i]);
+                this.DFS(this.ptData[index].connections[i],  subPath.concat(this.ptData[index].connections[i]));
+                
+            }
+        }
+        else if(subPath.length==1) {  //immediate connection of vertex
+            
+            
+            for(let i=0;i < this.ptData[index].connections.length;++i) {    //connections of immediate connection of root vertex
+                if(subPath[subPath.length-2] ==this.ptData[index].connections[i]) continue;
+                if(this.visitedDFS[this.ptData[index].connections[i]] == 1)  {
+                    subPath.push(this.ptData[index].connections[i]);
+                    if(subPath.length > 2) this.cyclesDFS.push(subPath);
+                    
+                    subPath = [];
+
+                }
+                else {
+                    this.visitedDFS[this.ptData[index].connections[i]] = 1;
+                    this.DFS(this.ptData[index].connections[i],  subPath.concat(this.ptData[index].connections[i]));
+                }
+                
+                
+                
+                
+   
+            }
+        }    
+        else if(subPath.length>1) {           //connection of connection of vertex (now, you can test for loops)
+            console.log('subPath',subPath)
+            for(let i=0;i < this.ptData[index].connections.length;++i) { 
+                if(subPath[subPath.length-2] == this.ptData[index].connections[i]) continue;
+                if(this.visitedDFS[this.ptData[index].connections[i]] == 1) {
+                    if(subPath.includes(this.ptData[index].connections[i])) {
+                        subPath = subPath.slice(subPath.indexOf(this.ptData[index].connections[i]));
+                        //console.log("edited",subPath.slice(this.ptData[index].connections[i]),this.ptData[index].connections[i]);
+                    }
+                    else subPath.push(this.ptData[index].connections[i]);
+                    // subPath.push(this.ptData[index].connections[i]);
+                    let isUnique = true;
+                    for(let i =0; i < this.cyclesDFS.length; ++i) {
+                        if(subPath.length==this.cyclesDFS[i]) {
+                            let matches = true;
+                            for(let j=0; j < subPath.length; ++j) {
+                                if(!this.cyclesDFS[i].includes(subPath[j])) matches=false;
+                            }
+                            if(matches) isUnique = matches;
+                        }
+                    }
+                    //console.log('subPath',subPath.slice(subPath[this.visitedDFS[this.ptData[index].connections[i]]]))
+                    if((subPath.length > 2) && isUnique) this.cyclesDFS.push(subPath);
+                    subPath = [];
+                    
+                }
+                
+                else {
+                    this.visitedDFS[this.ptData[index].connections[i]] = 1;
+                    this.DFS(this.ptData[index].connections[i],  subPath.concat(this.ptData[index].connections[i]));
+                }
+                
+                
+                // const summation = (previousValue, currentValue) => previousValue + currentValue;
+                // console.log(this.visitedDFS.reduce(summation), this.ptData.length)
+                // if(this.visitedDFS.reduce(summation) < this.ptData.length) 
+                // else return;
+      
+            }
+        }   
+        return;
+
+      
+        
+
+    }
 
 
     depthFirstSearch() {
-        var visited = [];
-        var cycles = [];    //will be strings that have the indices of the path ordered from least to greatest
-        for(let i =0; i < this.ptData.length;++i) {
-            visited[i] = false;
-        }
+        
+        
+        
+
+       
      
-
-        function DFS(G, index,path) {
-            var newPath = Array.from(path);
-            //console.log(path);
-            if(newPath.length==0) {       //root vertex
-                for(let i=0; i < G.ptData[index].connections.length;++i) {    //immediate connections of root vertex
-                    if(G.ptData[index].connections[i]==index) continue;
-                    if(visited[G.ptData[index].connections[i]] == true) continue;
-                    visited[G.ptData[index].connections[i]] = true;
-                    DFS(G,G.ptData[index].connections[i],[index]);
-                    
-                }
+        // let index = 0;
+        // var paths = [];
+        for(let i =0; i < this.ptData.length;++i) {
+            this.visitedDFS[i] = 0;
+        }
+        //this.DFS(0,[]);
+        for(let i =0; i < this.ptData.length; ++i) {
+            for(let i =0; i < this.ptData.length;++i) {
+                this.visitedDFS[i] = 0;
             }
-            else if(newPath.length==1) {  //immediate connection of vertex
-                newPath.push(index);
-                for(let i=0;i < G.ptData[index].connections.length;++i) {    //connections of immediate connection of root vertex
-                    if(newPath.includes(G.ptData[index].connections[i])) continue;
-                    if(visited[G.ptData[index].connections[i]] == true) continue;
-                    visited[G.ptData[index].connections[i]] = true;
-                    
-                    DFS(G,G.ptData[index].connections[i],newPath);
-                    //visited[G.ptData[index].connections[i]] = true;
-                }
-            }    
-            else if(newPath.length>1) {           //connection of connection of vertex (now, you can test for loops)
-                newPath.push(index);
-                for(let i=0;i < G.ptData[index].connections.length;++i) { 
-                    if(visited[G.ptData[index].connections[i]] == true) continue;
-                    visited[G.ptData[index].connections[i]] = true;
-
-                    let subArray = newPath.slice(0,newPath.length-2);
-                    if(subArray.includes(G.ptData[index].connections[i])) {
-                        console.log('newPath',newPath)
-                        cycles.push(newPath);
-                    }
-
-                    
-                    
-                    DFS(G,G.ptData[index].connections[i],newPath);
-                    //visited[G.ptData[index].connections[i]] = true;
-                }
-                
-            }   
-            return;
-            
-
+            this.DFS(i,[]);
         }
 
+        
+        
+        
+
+        console.log('cyclces',this.cyclesDFS);
+        // const summation = (previousValue, currentValue) => previousValue + currentValue;
+
+        // let numVertices = this.ptData.length;
+        // while(this.visitedDFS.reduce(summation) < numVertices) {
+        //     var currentPath = [];
+
+           
+        //     for(let i=0; i < this.ptData[index].connections.length;++i) {    //immediate connections of root vertex
+        //         //if(this.ptData[index].connections[i]==index) continue;
+        //         //if(this.visitedDFS[this.ptData[index].connections[i]] == 1) continue;
+        //         if(currentPath.length==0) {}       //root vertex
 
 
-        DFS(this,0,[]);
-        console.log("cycles",cycles);
+        //         this.visitedDFS[this.ptData[index].connections[i]] = 1;
+
+        //         //this.DFS(this.ptData[index].connections[i],[index]);
+
+
+                
+        //     }
+        //     index = this.ptData[index].connections[i]
+        //     //this.visitedDFS[index] = 1;
+        // }
+        
 
         
     }
+
+
+        
+
+        
+
+        
+    
 
 
 

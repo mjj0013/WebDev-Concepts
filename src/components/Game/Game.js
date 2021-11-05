@@ -67,7 +67,7 @@ class Game extends React.Component {
         this.canvasHeight = 2000;
 
 
-        this.backgroundHue = 180;
+        this.backgroundHue = 220;
         this.backgroundSaturation = 80;
         this.backgroundLightness = 95;
 
@@ -145,7 +145,7 @@ class Game extends React.Component {
         if(!(e.target.id.substr(0,2)=='pt' || e.target.id=="gameSVGBackground")) return e;
         e = e || window.event;
         e.preventDefault();
-        console.log("dragging " + e.target.id);
+        if(e.target.id.substr(0,2)=='pt') console.log("dragging " + e.target.id);
         // var gameSVG = document.getElementById('gameSVG');
 
         // if(this.currentlyDragging==null) this.currentlyDragging = e.target.id
@@ -209,16 +209,11 @@ class Game extends React.Component {
     dragMouseDown(e) {
         e = e || window.event;
         
-   
         if(this.currentlyDragging==null) this.currentlyDragging = e.target.id;
         else if(this.currentlyDragging!= e.target.id) {
             return;
-             // return e;
          }
-        
-
-       
-
+    
         this.lastZoom.x = e.offsetX;
         this.lastZoom.y = e.offsetY;
 
@@ -227,7 +222,6 @@ class Game extends React.Component {
             gameSVG.style.cursor = 'grabbing'
             this.dragStart = this.getTransformedPt(this.lastZoom.x, this.lastZoom.y);
         }
-
         document.onmouseup = this.closeDragElement;
         document.onmousemove = this.elementDrag;
 
@@ -236,13 +230,12 @@ class Game extends React.Component {
 
     makeDraggable(item_id) {
         var item = document.getElementById(item_id)
-        
         item.onmousedown = this.dragMouseDown;
     }
 
-
-
-    changeHue = (event) => this.backgroundHue = event.target.value;
+    changeHue = (event) => {
+        this.backgroundHue = event.target.value;
+    }
        
     
    
@@ -462,6 +455,7 @@ class Game extends React.Component {
                     e.preventDefault();
                 }
                 if(e.code=='Space') {this.generateRandomMesh(100,2);}
+                //if(e.code=='Space') {this.generateRandomMesh(10,2);}
                 this.moveObj(e.code);
             }
         );
@@ -667,7 +661,7 @@ class Game extends React.Component {
             commonTopPts = commonTopPts.filter(p => cTop5.includes(p));
             commonTopPts = commonTopPts.filter(p => dTop5.includes(p));
             commonTopPts = commonTopPts.concat(aTop5);
-            console.log('commonTopPts',commonTopPts);
+            //console.log('commonTopPts',commonTopPts);
             
             for(let p=0; p < commonTopPts.length; ++p) {
                 for(let p2=0; p2 < commonTopPts.length; ++p2) {
@@ -676,8 +670,10 @@ class Game extends React.Component {
             
                     if(!this.M.edgeExists(commonTopPts[p],commonTopPts[p2])) {
                         if(this.M.evalNewEdge([this.M.pts[commonTopPts[p]],  this.M.pts[commonTopPts[p2]]])) {
+                            
                             this.M.ptData[commonTopPts[p2]].connections.push(commonTopPts[p]);                 //add node a to node b's connections 
                             this.M.ptData[commonTopPts[p]].connections.push(commonTopPts[p2]);   //add node b to node a's connections 
+                            
                             this.M.edges.push({id:`edge${commonTopPts[p]}_${commonTopPts[p2]}`, data:[commonTopPts[p],commonTopPts[p2]]});    //add new edge to M.edges
                            
                             //makes it possible to adjust associated edges whenever a vertex is dragged
@@ -745,48 +741,74 @@ class Game extends React.Component {
         }
         console.log('this.M.edges', this.M.edges)
 
-        //track polygons in mesh
-        // for(let p=0; p < this.M.ptData.length;++p) {            //any Point A
-        //     let pt = this.M.ptData[p];
-        //     let ptNeighbors = pt.connections;
 
-        //     for(let p2=0; p2 < ptNeighbors.length; ++p2) {      //any of Point A's connections, Point B
-        //         let otherPt = this.M.ptData[ptNeighbors[p2]];
-        //         let otherPtNeighbors = otherPt.connections;
+        //track polygons (Method 2)
+        // for(let m =0; m< this.M.cyclesDFS.length; ++m) {
+        //     let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
+        //     newPolygon.setAttributeNS(null,'id',`polygon${m}`);
 
-        //         for(let p3=0; p3 < otherPtNeighbors.length; ++p3) {     //Point B's connections (exclude Point A)
-        //             if(otherPtNeighbors[p3]==pt.index) continue;
-                    
-        //             let distantPt = this.M.ptData[otherPtNeighbors[p3]];
-        //             let distantPtNeighbors = distantPt.connections;
 
-        //             if(distantPtNeighbors.includes(pt.index)) {    //loop completed as a triangle
-        //                 //console.log('polygon', pt, otherPt, distantPt)
-        //                 //let polyObj = new Polygon;
-
-        //                 let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
-        //                 newPolygon.setAttributeNS(null,'id',`polygon${pt.index}_${otherPt.index}_${distantPt.index}`);
-        //                 let d = `
-        //                     M ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
-        //                     L ${this.M.pts[otherPt.index].x},${this.M.pts[otherPt.index].y}
-        //                     L ${this.M.pts[distantPt.index].x},${this.M.pts[distantPt.index].y}
-        //                     L ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
-        //                 `
-
-        //                 newPolygon.setAttributeNS(null,'d',d);
-        //                 //let hue = getRandomInt(0,355);
-        //                 let hue = 220;
-        //                 let sat = getRandomInt(0,100);
-        //                 let light = getRandomInt(0,100);
-        //                 // newPolygon.setAttributeNS(null,'fill',`hsla(${hue},50%,50%, .5)`);
-        //                 //newPolygon.setAttributeNS(null,'fill',`hsla(${hue},${sat}%,${light}%,.5)`);
-        //                 newPolygon.setAttributeNS(null,'fill',`hsl(${hue},${sat}%,${light}%)`);
-        //                 newPolygon.setAttributeNS(null,'stroke', 'black');
-        //                 regionGroup.appendChild(newPolygon); 
-        //             }
-        //         }
+        //     let d = `M ${this.M.pts[this.M.cyclesDFS[m][0]].x},${this.M.pts[this.M.cyclesDFS[m][0]].y}`
+        //     for(let c=1; c < this.M.cyclesDFS[m].length; ++c) {
+        //         d += `L ${this.M.pts[this.M.cyclesDFS[m][c]].x},${this.M.pts[this.M.cyclesDFS[m][c]].y}`
+                
         //     }
+        //     d += `L ${this.M.pts[this.M.cyclesDFS[m][0]].x},${this.M.pts[this.M.cyclesDFS[m][0]].y}`
+
+        //     newPolygon.setAttributeNS(null,'d',d);
+        //     //let hue = getRandomInt(0,355);
+        //     //let hue = 220;
+        //     let sat = getRandomInt(0,100);
+        //     let light = getRandomInt(0,100);
+        //     // newPolygon.setAttributeNS(null,'fill',`hsla(${hue},50%,50%, .5)`);
+        //     newPolygon.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
+        //     //newPolygon.setAttributeNS(null,'fill',`hsl(${hue},${sat}%,${light}%)`);
+        //     newPolygon.setAttributeNS(null,'stroke', 'black');
+        //     regionGroup.appendChild(newPolygon); 
         // }
+        //*************************************************************************************************************** */
+        //track polygons (Method 1)
+        for(let p=0; p < this.M.ptData.length;++p) {            //any Point A
+            let pt = this.M.ptData[p];
+            let ptNeighbors = pt.connections;
+
+            for(let p2=0; p2 < ptNeighbors.length; ++p2) {      //any of Point A's connections, Point B
+                let otherPt = this.M.ptData[ptNeighbors[p2]];
+                let otherPtNeighbors = otherPt.connections;
+
+                for(let p3=0; p3 < otherPtNeighbors.length; ++p3) {     //Point B's connections (exclude Point A)
+                    if(otherPtNeighbors[p3]==pt.index) continue;
+                    
+                    let distantPt = this.M.ptData[otherPtNeighbors[p3]];
+                    let distantPtNeighbors = distantPt.connections;
+
+                    if(distantPtNeighbors.includes(pt.index)) {    //loop completed as a triangle
+                        //console.log('polygon', pt, otherPt, distantPt)
+                        //let polyObj = new Polygon;
+
+                        let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
+                        newPolygon.setAttributeNS(null,'id',`polygon${pt.index}_${otherPt.index}_${distantPt.index}`);
+                        let d = `
+                            M ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
+                            L ${this.M.pts[otherPt.index].x},${this.M.pts[otherPt.index].y}
+                            L ${this.M.pts[distantPt.index].x},${this.M.pts[distantPt.index].y}
+                            L ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
+                        `
+
+                        newPolygon.setAttributeNS(null,'d',d);
+                        //let hue = getRandomInt(0,355);
+                        //let hue = 220;
+                        let sat = getRandomInt(0,100);
+                        let light = getRandomInt(0,100);
+                        // newPolygon.setAttributeNS(null,'fill',`hsla(${hue},50%,50%, .5)`);
+                        newPolygon.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
+                        //newPolygon.setAttributeNS(null,'fill',`hsl(${hue},${sat}%,${light}%)`);
+                        newPolygon.setAttributeNS(null,'stroke', 'black');
+                        regionGroup.appendChild(newPolygon); 
+                    }
+                }
+            }
+        }
     }
 
 
