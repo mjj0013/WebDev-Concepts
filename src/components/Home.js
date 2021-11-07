@@ -16,6 +16,8 @@ import bg_image2 from "../img/high_res_grass.jpeg";
 import bg_image3 from "../img/IMG_2313.jpg";
 
 
+import {imageReader} from './imageManip.js';
+
 import SettingsModal from './SettingsModal';
 
 
@@ -35,7 +37,7 @@ class Home extends React.Component {
 	
 		this.getChildContext = this.getChildContext.bind(this);
 		
-
+		this.loadImage = this.loadImage.bind(this);
 		this.state = { activeIndex: 0 }
 	}
 
@@ -98,6 +100,7 @@ class Home extends React.Component {
 		// image3.src="../img/IMG_2312.jpg";
 
 
+
 		// document.body.style.backgroundImage = 'url("../img/IMG_2313.jpg")';
 		// document.body.style.backgroundRepeat = 'no-repeat';
 		// document.body.style.backgroundAttachment='fixed';
@@ -148,37 +151,35 @@ class Home extends React.Component {
 		}
 	}
 
+	loadImage(e) {
+		console.log(e.target.value)
+		imageReader(document.getElementById("loadedImg"),null,{type:"gauss", kernelLength:5, sig:1})
+	}
 
-
-	
+	//<img className="backgroundImage" src='../img/IMG_2313.jpg'/>
 	render() {
 		return (
 			<Container id="homeRoot">
 				
+				<canvas id="loadedImg" />
+				<Layout id="homeLayout" className="homeLayout" title="Home" description="asdfasfd">
+					<label htmlFor="imgFile">Choose text file: </label>
+                    <input type="file" id="imgFile" onChange={this.loadImage}></input>
 					
-                
-				
-				<Layout className="homeLayout" title="Home" description="asdfasfd">
 					<Header as="h2">This is the home page</Header>
-					
 					<p>This is a description about the home page.</p>
 					
 				</Layout>
 				
 				<Divider />
 				
-				
-				
-				<CalculatorModal id="cm" toggleSettings={this.toggleSettings}/>
-				<SettingsModal id='calcSettingsModal'/>
-				<img class="backgroundCanvas" src='../img/IMG_2313.jpg'/>
-				
 			</Container>
 			
 		  );
 	}
 }
-
+/* <CalculatorModal id="cm" toggleSettings={this.toggleSettings}/>
+<SettingsModal id='calcSettingsModal'/> */
 Home.childContextTypes = {
 	toggleSettings: PropTypes.func,
 
