@@ -22,10 +22,8 @@ import SettingsModal from './SettingsModal';
 
 
 class Home extends React.Component {
-
 	constructor(props) {
 		super(props);
-
 
 		this.bgCanvasRef = React.createRef();		//background canvas reference
         this.bgContextRef = React.createRef();		//background context reference
@@ -111,15 +109,12 @@ class Home extends React.Component {
 
 	toggleCalculator() {
 		let w = document.getElementById("cw");
-		
         if(w.style.display=="none" || w.style.display=='') {
 			
             w.style.display="block";
 			window.setInterval(w.updateAnswer, 1000);
         }
-        else {
-            w.style.display="none";
-        }
+        else { w.style.display="none"; }
 	}
 
 	toggleSettings(e) {
@@ -127,21 +122,10 @@ class Home extends React.Component {
 		
 		let w = document.getElementById("sw");
 		
-        if(w.style.display=="none" || w.style.display=='') {
-			
-            w.style.display="block";
-			//window.setInterval(w.updateAnswer, 1000);
-        }
-        else {
-            w.style.display="none";
-        }
-		
-		
-
+        if(w.style.display=="none" || w.style.display=='') { w.style.display="block"; }
+        else { w.style.display="none"; }
 		if(e.target.id=="calcSettingsButton") {		//settings request came from calculator
 			console.log("calculator button requested settings")
-
-			//document.getElementById('elementSettingsPage').appendChild(this.calculatorSpecificSettings());
 			console.log(document.getElementById('elementSettingsPage'));
 			this.currentFocusedElement = "calc";
 		}
@@ -156,12 +140,11 @@ class Home extends React.Component {
 		imageReader(document.getElementById("loadedImg"),null,{type:"gauss", kernelLength:5, sig:1})
 	}
 
+	
 	//<img className="backgroundImage" src='../img/IMG_2313.jpg'/>
 	render() {
 		return (
 			<Container id="homeRoot">
-				
-				<canvas id="loadedImg" />
 				<Layout id="homeLayout" className="homeLayout" title="Home" description="asdfasfd">
 					<label htmlFor="imgFile">Choose text file: </label>
                     <input type="file" id="imgFile" onChange={this.loadImage}></input>
@@ -172,7 +155,7 @@ class Home extends React.Component {
 				</Layout>
 				
 				<Divider />
-				
+				<canvas id="loadedImg" width="800" height="600" style={{border:"1px solid #000000"}} />
 			</Container>
 			
 		  );
@@ -187,5 +170,4 @@ Home.childContextTypes = {
 //<button id="calculatorButton">Calculator</button>
 
 export default Home;
-
 

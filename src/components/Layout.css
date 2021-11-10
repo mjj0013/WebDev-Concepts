@@ -254,24 +254,7 @@ select {
 	cursor:grab;
 
 }
- 
 
-.gameCanvasResizeButton {
-	
-	width:25px;
-	height:25px;
-	
-	cursor:move;
-	z-index:9;
-	background-color: gray;
-	position:absolute;
-	/* position:absolute;
-	left:calc(var(--gameCanvasWidth)+1125px);
-	top:calc(var(--gameCanvasHeight)+675px); */
-	border: 1px solid black ;
-	
-	
-}
 #gameControlPanel {
 	/* box-shadow:10px 5px 5px black;  */
 	display: grid;
@@ -286,10 +269,6 @@ select {
 	/* outline-style: inset;  */
 	fill: rgba(18, 25, 32, 0.75);
 	
-	
-	
-	
-	
 }
 
 
@@ -298,17 +277,6 @@ select {
 	
 	left:15vw;
 }
-
-
-
-
-
-/* .gameCanvasResizeButton:focus {
-
-} */
-
-
-
 
 
 
