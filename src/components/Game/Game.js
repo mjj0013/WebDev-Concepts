@@ -5,7 +5,7 @@ import {Table, Header, Container, Divider, Icon, ItemContent } from 'semantic-ui
 import Layout from '../Layout';
 import "regenerator-runtime/runtime";
 
-
+import "./gameSVG.css"
 
 import {Mesh,Polygon} from './Mesh';
 import BackgroundEffect from './BackgroundEffect';
@@ -42,9 +42,6 @@ class Game extends React.Component {
         this.collidesWith = this.collidesWith.bind(this);
        
         this.getTransformedPt = this.getTransformedPt.bind(this);
-
-        // this.dragDisplacement = {x:0, y:0}
-
 
         this.zoomFocusPt = {x:0, y:0};
 
@@ -223,12 +220,6 @@ class Game extends React.Component {
         this.backgroundHue = event.target.value;
     }
        
-    
-   
-
-    
-
-    
     initWorld = () =>{
         this.addPhysicalObject("user-ellipse", 50,50,25,25,0,0,25,'rgb(24,210,24)',true);
         this.addPhysicalObject("user-ellipse",150,50,25,25,0,0,25,'rgb(150,90,24)', true);
@@ -279,6 +270,14 @@ class Game extends React.Component {
         newShape.setAttributeNS(null,'cy',newObj.y);
         newShape.setAttributeNS(null,'r',newObj.radius);
         newShape.setAttributeNS(null,'fill', newObj.color);
+
+        
+        newShape.setAttribute("style","filter:url(#filter)");
+
+        
+
+
+
 
         newShape.addEventListener('click', (e) => {
             console.log("clicked obj: "+obj.index)
@@ -445,7 +444,16 @@ class Game extends React.Component {
                 if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
                     e.preventDefault();
                 }
-                if(e.code=='Space') {this.generateRandomMesh(100,2);}
+                if(e.code=='Space') {this.generateRandomMesh(15,2);}
+                if(e.code=='KeyQ') {
+                    if(document.getElementById("polyGroup").getAttribute("visibility")=="hidden") {
+                        document.getElementById("polyGroup").setAttribute("visibility","visible");
+                    }
+                    else {
+                        document.getElementById("polyGroup").setAttribute("visibility","hidden");
+                    }
+                       
+                }
                 //if(e.code=='Space') {this.generateRandomMesh(10,2);}
                 this.moveObj(e.code);
             }
@@ -607,17 +615,14 @@ class Game extends React.Component {
         for(let p=0; p < this.M.pts.length;++p) {
             let newPt = document.createElementNS("http://www.w3.org/2000/svg",'circle');
             //let newPt = this.regionGroupRef.current.createElementNS("http://www.w3.org/2000/svg",'circle');
-            newPt.setAttributeNS(null,'id','pt'+p);
-            newPt.setAttributeNS(null,'cx', this.M.pts[p].x);
-            newPt.setAttributeNS(null,'cy', this.M.pts[p].y);
-            newPt.setAttributeNS(null,'r', 6);
-            newPt.setAttributeNS(null,'fill', 'black');
-            newPt.setAttributeNS(null,'ref',this.regionGroupRef);
-            // let newMovement = document.createElementNS("http://www.w3.org/2000/svg",'animateMotion');
-            // newMovement.setAttribute("dur","10s");
-            // newMovement.setAttribute("repeatCount","indefinite");
-            // newMovement.setAttribute("path","m20,50 c20,-50 180,150 180,50 c180-50 20,150 20,50 z");
-
+            newPt.setAttribute('id','pt'+p);
+            newPt.setAttribute("class","meshNode")
+            newPt.setAttribute('cx', this.M.pts[p].x);
+            newPt.setAttribute('cy', this.M.pts[p].y);
+            newPt.setAttribute('r', 6);
+            // newPt.setAttribute('fill', 'black');
+            //newPt.setAttribute('ref',this.regionGroupRef);
+         
             //newPt.appendChild(newMovement);
             newPt.onmousedown = this.dragMouseDown;
             this.regionGroupRef.current.appendChild(newPt);
@@ -632,29 +637,27 @@ class Game extends React.Component {
             let d  = ``;
             d += `M ${a.x}, ${a.y}`;
             d += `L ${b.x}, ${b.y}`;
-            //d += `S 20,50,${b.x}, ${b.y}`;
+     
             let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
             //let newPolygon = this.regionGroupRef.current.createElementNS("http://www.w3.org/2000/svg",'path');
-            newPolygon.setAttributeNS(null,'id',this.M.edges[e].id);
-            newPolygon.setAttributeNS(null,'d',d);
-            newPolygon.setAttributeNS(null,'fill','transparent');
-            newPolygon.setAttributeNS(null,'ref',this.regionGroupRef);
-            newPolygon.setAttributeNS(null,'stroke', 'black');
-            newPolygon.onmousedown = (e) =>{console.log(e.target.id)}
+            newPolygon.setAttribute('id',this.M.edges[e].id);
+            newPolygon.setAttribute('d',d);
+            newPolygon.setAttribute('class','meshRegionBorder')
+         
             this.regionGroupRef.current.appendChild(newPolygon);
-
-
-        
         }
         console.log('this.M.edges', this.M.edges)
 
 
         //track polygons (Method 2)
-        // for(let m =0; m< this.M.cyclesDFS.length; ++m) {
+        // for(let m =0; m < this.M.cyclesDFS.length; ++m) {
         //     let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
         //     newPolygon.setAttributeNS(null,'id',`polygon${m}`);
-
-
+        //     newPolygon.setAttribute('class', 'meshRegion')
+        //     // let newMovement = document.createElementNS("http://www.w3.org/2000/svg",'animateMotion');
+        //     // newMovement.setAttribute("dur","10s");
+        //     // newMovement.setAttribute("repeatCount","indefinite");
+        //     // newMovement.setAttribute("path","m20,50 c20,-50 180,150 180,50 c180-50 20,150 20,50 z");
         //     let d = `M ${this.M.pts[this.M.cyclesDFS[m][0]].x},${this.M.pts[this.M.cyclesDFS[m][0]].y}`
         //     for(let c=1; c < this.M.cyclesDFS[m].length; ++c) {
         //         d += `L ${this.M.pts[this.M.cyclesDFS[m][c]].x},${this.M.pts[this.M.cyclesDFS[m][c]].y}`
@@ -662,66 +665,67 @@ class Game extends React.Component {
         //     }
         //     d += `L ${this.M.pts[this.M.cyclesDFS[m][0]].x},${this.M.pts[this.M.cyclesDFS[m][0]].y}`
 
-        //     newPolygon.setAttributeNS(null,'d',d);
+        //     newPolygon.setAttribute('d',d);
         //     //let hue = getRandomInt(0,355);
         //     //let hue = 220;
-        //     let sat = getRandomInt(0,100);
-        //     let light = getRandomInt(0,100);
-        //     //newPolygon.setAttributeNS(null,'fill',`hsl(${this.backgroundHue},${sat}%,${light}%)`);
-        //     newPolygon.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
+        //     // let sat = getRandomInt(0,100);
+        //     // let light = getRandomInt(0,100);
+        //     // //newPolygon.setAttributeNS(null,'fill',`hsl(${this.backgroundHue},${sat}%,${light}%)`);
+        //     // newPolygon.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
 
-        //     newPolygon.setAttributeNS(null,'ref',this.regionGroupRef);
+        //     //newPolygon.setAttributeNS(null,'ref',this.regionGroupRef);
 
         //     //newPolygon.setAttributeNS(null,'fill',`hsl(${hue},${sat}%,${light}%)`);
-        //     newPolygon.setAttributeNS(null,'stroke', 'black');
+        //     //newPolygon.setAttributeNS(null,'stroke', 'black');
+        //     // newPolygon.appendChild(newMovement);
         //     this.regionGroupRef.current.appendChild(newPolygon); 
         // }
         //*************************************************************************************************************** */
         //track polygons (Method 1)
-        // for(let p=0; p < this.M.ptData.length;++p) {            //any Point A
-        //     let pt = this.M.ptData[p];
-        //     let ptNeighbors = pt.connections;
+        for(let p=0; p < this.M.ptData.length;++p) {            //any Point A
+            let pt = this.M.ptData[p];
+            let ptNeighbors = pt.connections;
 
-        //     for(let p2=0; p2 < ptNeighbors.length; ++p2) {      //any of Point A's connections, Point B
-        //         let otherPt = this.M.ptData[ptNeighbors[p2]];
-        //         let otherPtNeighbors = otherPt.connections;
+            for(let p2=0; p2 < ptNeighbors.length; ++p2) {      //any of Point A's connections, Point B
+                let otherPt = this.M.ptData[ptNeighbors[p2]];
+                let otherPtNeighbors = otherPt.connections;
 
-        //         for(let p3=0; p3 < otherPtNeighbors.length; ++p3) {     //Point B's connections (exclude Point A)
-        //             if(otherPtNeighbors[p3]==pt.index) continue;
+                for(let p3=0; p3 < otherPtNeighbors.length; ++p3) {     //Point B's connections (exclude Point A)
+                    if(otherPtNeighbors[p3]==pt.index) continue;
                     
-        //             let distantPt = this.M.ptData[otherPtNeighbors[p3]];
-        //             let distantPtNeighbors = distantPt.connections;
+                    let distantPt = this.M.ptData[otherPtNeighbors[p3]];
+                    let distantPtNeighbors = distantPt.connections;
 
-        //             if(distantPtNeighbors.includes(pt.index)) {    //loop completed as a triangle
-        //                 //console.log('polygon', pt, otherPt, distantPt)
-        //                 //let polyObj = new Polygon;
+                    if(distantPtNeighbors.includes(pt.index)) {    //loop completed as a triangle
+                        //console.log('polygon', pt, otherPt, distantPt)
+                        //let polyObj = new Polygon;
                         
-        //                 //let newPolygon = this.regionGroupRef.current.createElementNS("http://www.w3.org/2000/svg",'path');
-        //                 let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
-        //                 newPolygon.setAttributeNS(null,'id',`polygon${pt.index}_${otherPt.index}_${distantPt.index}`);
-        //                 let d = `
-        //                     M ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
-        //                     L ${this.M.pts[otherPt.index].x},${this.M.pts[otherPt.index].y}
-        //                     L ${this.M.pts[distantPt.index].x},${this.M.pts[distantPt.index].y}
-        //                     L ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
-        //                 `
+                        //let newPolygon = this.regionGroupRef.current.createElementNS("http://www.w3.org/2000/svg",'path');
+                        let newPolygon = document.createElementNS("http://www.w3.org/2000/svg",'path');
+                        newPolygon.setAttributeNS(null,'id',`polygon${pt.index}_${otherPt.index}_${distantPt.index}`);
+                        let d = `
+                            M ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
+                            L ${this.M.pts[otherPt.index].x},${this.M.pts[otherPt.index].y}
+                            L ${this.M.pts[distantPt.index].x},${this.M.pts[distantPt.index].y}
+                            L ${this.M.pts[pt.index].x},${this.M.pts[pt.index].y}
+                        `
 
-        //                 newPolygon.setAttributeNS(null,'d',d);
-        //                 //let hue = getRandomInt(0,355);
-        //                 //let hue = 220;
-        //                 let sat = getRandomInt(0,100);
-        //                 let light = getRandomInt(0,100);
-        //                 // newPolygon.setAttributeNS(null,'fill',`hsla(${hue},50%,50%, .5)`);
-        //                 newPolygon.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
-        //                 //newPolygon.setAttributeNS(null,'fill',`hsl(${hue},${sat}%,${light}%)`);
-        //                 newPolygon.setAttributeNS(null,'stroke', 'black');
-        //                 newPolygon.setAttributeNS(null,'ref',this.regionGroupRef);
-                        
-        //                 this.regionGroupRef.current.appendChild(newPolygon); 
-        //             }
-        //         }
-        //     }
-        // }
+                        newPolygon.setAttributeNS(null,'d',d);
+                        //let hue = getRandomInt(0,355);
+                        let hue = 220;
+                        let sat = getRandomInt(0,100);
+                        let light = getRandomInt(0,100);
+                        // newPolygon.setAttributeNS(null,'fill',`hsla(${hue},50%,50%, .5)`);
+                        //newPolygon.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
+                        newPolygon.setAttributeNS(null,'fill',`hsl(${hue},${sat}%,${light}%)`);
+                        newPolygon.setAttributeNS(null,'stroke', 'black');
+                        newPolygon.setAttributeNS(null,'ref',this.regionGroupRef);
+                        document.getElementById("polyGroup").appendChild(newPolygon);
+                        //this.regionGroupRef.current.appendChild(newPolygon); 
+                    }
+                }
+            }
+        }
     }
 
 
@@ -773,10 +777,38 @@ class Game extends React.Component {
                 </Container>
                 <div id="viewAndPanel" width={this.canvasWidth} height={this.canvasHeight}>
                     <svg id="gameSVG"  ref={this.svgRef}  width={this.canvasWidth} height={this.canvasHeight} xmlns="http://www.w3.org/2000/svg"> 
-                        <rect id="gameSVGBackground" ref={this.svgRef} width="100%" height="100%" fill='grey' />
+                        <filter id = "filter">
+                            <feSpecularLighting result="specOut" specularExponent="50" lighting-color="#bbbbbb" surfaceScale="5">
+                                    <fePointLight x="400" y="400" z="20"/>
+                            </feSpecularLighting>
+
+                            <feSpecularLighting result="specOut2" specularExponent="40" lighting-color="#bbbbbb" surfaceScale="5">
+                                <fePointLight x="100" y="100" z="30"/>
+                            </feSpecularLighting>
+                            <feSpecularLighting result="specOut3" specularExponent="40" lighting-color="#bbbbbb" surfaceScale="15">
+                                <fePointLight x="250" y="50" z="30"/>
+                            </feSpecularLighting>
+                           
+
+                            
+                            <feMerge result="s">
+                                <feMergeNode in="specOut" />
+                                <feMergeNode in="specOut2" />
+                                <feMergeNode in="specOut3" />
+                               
+                                
+                            </feMerge>
+                            
+                            
+                            <feComposite in="SourceGraphic" in2="s" operator="arithmetic" k1="5" k2="1" k3="1" k4="0"/>
+                           
+
+                        </filter>
+
+                        <rect id="gameSVGBackground" ref={this.svgRef} width="100%" height="100%" fill='black' style={{filter:'url(#filter)'}}/>
                         <g id="meshGroup" ref={this.meshGroupRef} transform="matrix(1 0 0 1 0 0)" >
                             <g id="regionGroup" ref={this.regionGroupRef} transform="matrix(1 0 0 1 0 0)" />
-                                
+                            <g id="polyGroup" transform="matrix(1 0 0 1 0 0)" />
                             <g id="circleGroup" ref={this.circleGroupRef} transform="matrix(1 0 0 1 0 0)"/>
                         </g>
                     </svg>

@@ -1,0 +1,36 @@
+.meshNode {
+    fill:black;
+    
+}
+
+.meshRegionBorder {
+    fill:none;
+    stroke:black;
+
+}
+
+.meshRegion {
+    fill: hsla(220,50%,50%,.5);
+    /* stroke: black; */
+    
+
+}
+
+.meshRegion:hover {
+    animation: 	regionFocusAnimation infinite 500ms ;
+    animation-timing-function: linear;
+    
+}
+
+
+
+@keyframes regionFocusAnimation {
+    from {
+        fill: hsla(220,50%,50%,.5);
+    }
+    to {
+        fill: hsla(220,50%,75%,.5);
+    }
+}
+
+/* Try using SASS (scss) for doing transforms on svgs */
