@@ -413,6 +413,8 @@ export class Mesh {
     polygonIsValid(polygon,incrementUsageCounts=false) {
         let result = true;
         
+
+        //checks if each edge is valid
         for(let i =0; i < polygon.length; ++i) {
             if(i==polygon.length-1) {
                 
@@ -431,6 +433,11 @@ export class Mesh {
                 }
             }
         }
+
+        // ****put code here that tests if other vertices are inside the polygon****
+
+
+        //if valid, increments each edge's "polygon membership" variable 
         if(result && incrementUsageCounts) {
             for(let i =0; i < polygon.length; ++i) {
                 if(i==polygon.length-1) {
@@ -487,7 +494,7 @@ export class Mesh {
                 var Edge = this.getEdge(index,nextPt);
                 if(Edge.polygonUsageCount >=2) continue;
                 if(subPath[subPath.length-2] == nextPt) continue;
-                if(nextPt == goal) {
+                if(nextPt == subPath[0]) {
 
                     // this.pathsToOrigin[nextPt].shortestPath = [subPath[0]];
                     this.visitedDFS[nextPt] = 1;
@@ -500,7 +507,7 @@ export class Mesh {
                     }
                     
                 }
-                else if(this.visitedDFS[nextPt]==0){
+                else {
                     this.visitedDFS[nextPt] = 1;
                     this.DFS(nextPt,  subPath.concat(nextPt));
                 }
@@ -539,10 +546,11 @@ export class Mesh {
                 // }
                 
                 else {
+                    
+                    
                     this.visitedDFS[nextPt] = 1;
-                    
-                    
                     this.DFS(nextPt,  subPath.concat(nextPt));
+                    
                 }
 
             }
