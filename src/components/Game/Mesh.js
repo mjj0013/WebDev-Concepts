@@ -7,11 +7,12 @@ export class Mesh {
         else this.pts = pts;
         this.ptData = [];
         this.edges = []
-        this.polygons = [];
+        this.polygons = {};
 
         this.hasIntersection2D = this.hasIntersection2D.bind(this);
         this.evalNewEdge = this.evalNewEdge.bind(this);
         this.edgeExists = this.edgeExists.bind(this);
+        this.polygonIsValid = this.polygonIsValid.bind(this);
         this.polygonExists = this.polygonExists.bind(this);
         this.handleStragglers = this.handleStragglers.bind(this);
         this.getAngleOfLines = this.getAngleOfLines.bind(this);
@@ -25,8 +26,11 @@ export class Mesh {
         this.generateEdges = this.generateEdges.bind(this);
         this.build = this.build.bind(this);
 
-    
+        this.pathsToOrigin = null;
 
+        this.getShortestPath = this.getShortestPath.bind(this);
+
+        this.getEdge = this.getEdge.bind(this);
         this.animateMesh = false;
         
        
@@ -117,12 +121,16 @@ export class Mesh {
                     let pt1 = commonTopPts[p];
                     let pt2 = commonTopPts[p2];
                     if(!this.edgeExists(pt1,pt2)) {
+                       
                         if(this.evalNewEdge(pt1,pt2)) {
                             if(!this.ptData[pt2].connections.includes(pt1) && !this.ptData[pt1].connections.includes(pt2)) {
                                 this.ptData[pt2].connections.push(pt1);                 //add node a to node b's connections 
                                 this.ptData[pt1].connections.push(pt2);   //add node b to node a's connections 
                                 
-                                this.edges.push({id:`edge${pt1}_${pt2}`, data:[pt1,pt2]});    //add new edge to edges
+                                this.edges.push({               //add new edge to edges
+                                    id:`edge${pt1}_${pt2}`, 
+                                    data:[pt1,pt2],
+                                    polygonUsageCount:0 });    
                             
                                 //makes it possible to adjust associated edges whenever a vertex is dragged
                                 if(!this.ptData[pt1].edgeIDs.includes(`edge${pt1}_${pt2}`) && !this.ptData[pt1].edgeIDs.includes(`edge${pt2}_${pt1}`)) {
@@ -254,8 +262,28 @@ export class Mesh {
         }
         return successful;
     }
+    getEdge(ptA,ptB) {
+        let tryA = this.edges.find(l=>l.data[0]==ptB && l.data[1]==ptA);
+        let tryB = this.edges.find(l=>l.data[0]==ptA && l.data[1]==ptB);
+
+        if(tryA!=undefined) return tryA;
+        else if(tryB!=undefined) return tryB;
+        else return -1;
+    }
     edgeExists(ptA,ptB) {
         return !((this.edges.find(l=>l.data[0]==ptB && l.data[1]==ptA)==undefined) && (this.edges.find(l=>l.data[0]==ptA && l.data[1]==ptB)==undefined));
+    }
+
+    getShortestPath(ptA, ptB, omitVertices=null) {
+        if(edgeExists(ptA,ptB)) return 1;   //means they are directly connected
+        else {
+            var paths = [];
+            
+            for(let i =0; i < this.ptData[ptA].connections; ++i) {
+                this.ptData[ptA].connections[i]
+            }
+        }
+
     }
 
     //try this one vvvvvvvv
@@ -316,7 +344,7 @@ export class Mesh {
                         if(this.ptData[p].connections.includes(nextClosestPt.index)) continue;     //if its only connection is this point, skip
                         if(!this.edgeExists(p,nextClosestPt.index)) {       
                             
-                            // if(this.evalNewEdge([this.pts[p],  this.pts[nextClosestPt.index]])) {
+                            //if(this.evalNewEdge([this.pts[p],  this.pts[nextClosestPt.index]])) {
                             if(this.evalNewEdge(p , nextClosestPt.index)) {
                                 let nextClosestPtObj = this.ptData[nextClosestPt.index];
                             
@@ -364,69 +392,111 @@ export class Mesh {
             }
         }
     }
-    polygonExists(polygon) {
+    polygonExists(newPolygon) {
+        var result = false;
+        if(this.polygons.length==0) return result;
+        var existingPolygons = Object.values(this.polygons).map(x=>x.toString());
+        
+        var newPolygonVersions = []
+        var tempArray = Array.from(newPolygon)
+        for(var i =0; i < newPolygon.length; ++i) {
+            tempArray=tempArray.slice(1).concat(tempArray[0]);
+            newPolygonVersions.push(tempArray.toString());
+        }
+        for(let i=0; i < newPolygonVersions.length;++i) {
+            if(existingPolygons.includes(newPolygonVersions[i])) result = true;
+        }
+        return result;
+        
+
+    }
+    polygonIsValid(polygon,incrementUsageCounts=false) {
         let result = true;
-        let results = [];
+        
         for(let i =0; i < polygon.length; ++i) {
-            
-            // if(this.edgeExists(polygon[i],polygon[(i+1%polygon.length)])==false) {result=false;}
             if(i==polygon.length-1) {
-                results.push(this.edgeExists(polygon[i],polygon[0]));
+                
                 if(this.edgeExists(polygon[i],polygon[0])==false) {result = false;}
+                else {
+                    let Edge = this.getEdge(polygon[i],polygon[0]);
+                    if(Edge.polygonUsageCount >= 2) result = false;
+                }
             }
             else {
-                results.push(this.edgeExists(polygon[i],polygon[i+1]));
+                
                 if(this.edgeExists(polygon[i],polygon[i+1])==false) {result=false;}
-
+                else {
+                    let Edge = this.getEdge(polygon[i],polygon[i+1]);
+                    if(Edge.polygonUsageCount >= 2) result = false;
+                }
             }
         }
-        console.log(results);
+        if(result && incrementUsageCounts) {
+            for(let i =0; i < polygon.length; ++i) {
+                if(i==polygon.length-1) {
+                    ++this.getEdge(polygon[i],polygon[0]).polygonUsageCount;  
+                }
+                else {
+                    ++this.getEdge(polygon[i],polygon[i+1]).polygonUsageCount;  
+                }
+            }
+        }
+        
         return result;
     }
-    DFS(index,path) {
-        let subPath = Array.from(path);    
-       
+    
+
+    DFS(index,path, goal, excludeVertices=null) {
+        var subPath = Array.from(path);    
+        //var subPath = path;
         if(subPath.length==0) {       //root vertex
-            
             this.visitedDFS[index] = 1;
             for(let i=0; i < this.ptData[index].connections.length;++i) {    //immediate connections of root vertex
+                let nextPt = this.ptData[index].connections[i];
                 if(this.ptData[index].connections[i]==index) continue;
-                
-                
-                if(this.visitedDFS[this.ptData[index].connections[i]] == 0) {
+                if(this.getEdge(index,nextPt).polygonUsageCount >=2) continue;
+                //if(this.visitedDFS[this.ptData[index].connections[i]] == 0) {
+                else {
                     this.visitedDFS[this.ptData[index].connections[i]] = 1;
-                    this.DFS(this.ptData[index].connections[i],  subPath.concat(index,this.ptData[index].connections[i]));
-
+                    this.pathsToOrigin[this.ptData[index].connections[i]].shortestPath = [];
+                    
+                    this.DFS(this.ptData[index].connections[i],  subPath.concat(index,this.ptData[index].connections[i]), goal  );
+                    
                 }
-                
             }
         }
         else if(subPath.length==2) {  //immediate connection of vertex
             
             for(let i=0;i < this.ptData[index].connections.length;++i) {    //connections of immediate connection of root vertex
                 let nextPt = this.ptData[index].connections[i];
-                
                 if(subPath[subPath.length-2] == nextPt) continue;
-                //if(this.ptData[nextPt].associatedPolygons >= this.ptData[nextPt].connections.length-1) continue;
-                if(this.visitedDFS[this.ptData[index].connections[i]] == 0) {
-                    this.visitedDFS[nextPt] = 1;
-                    this.DFS(nextPt,  subPath.concat(nextPt));
-                }
+                if(this.getEdge(index,nextPt).polygonUsageCount >=2) continue;
+
                 
+                else {
+                //if(this.visitedDFS[this.ptData[index].connections[i]] == 0) {
                     
-                
+                    this.visitedDFS[nextPt] = 1;
+                    this.DFS(nextPt,  subPath.concat(nextPt), goal);
+                }
             }
-        } 
+        }
         else if(subPath.length==3) {
             for(let i=0; i < this.ptData[index].connections.length; ++i) { 
                 let nextPt = this.ptData[index].connections[i];
+                var Edge = this.getEdge(index,nextPt);
+                if(Edge.polygonUsageCount >=2) continue;
                 if(subPath[subPath.length-2] == nextPt) continue;
-                if(nextPt == subPath[0]) {
+                if(nextPt == goal) {
+
+                    // this.pathsToOrigin[nextPt].shortestPath = [subPath[0]];
                     this.visitedDFS[nextPt] = 1;
-                    console.log("triangle")
-                    if(this.polygonExists(subPath)) {
-                        this.cyclesDFS.push(subPath); 
-                      
+                    console.log("triangle");
+
+                    if(!this.polygonExists(subPath)) {
+                        if(this.polygonIsValid(subPath,true)) {
+                            this.cyclesDFS.push(subPath); 
+                        }
                     }
                     
                 }
@@ -440,47 +510,38 @@ export class Mesh {
         
             for(let i=0; i < this.ptData[index].connections.length; ++i) { 
                 let nextPt = this.ptData[index].connections[i];
-                
+                var Edge = this.getEdge(index,nextPt);
+                if(Edge.polygonUsageCount >=2) continue;
                 if(subPath[subPath.length-2] == nextPt) continue;
-                //if(this.ptData[nextPt].associatedPolygons >= this.ptData[nextPt].connections.length-1) continue;
-                //if(subPath.includes(nextPt)) {
-                if(this.visitedDFS[nextPt] == 1) {
-                    if(subPath.includes(nextPt)) { subPath = subPath.slice(subPath.indexOf(nextPt));  }
-                    else subPath.push(nextPt);
-              
-                    let isUnique = true;
-                    
-                    // for(let x =0; x < this.cyclesDFS.length; ++x) {
-                    //     if(subPath.toString().includes(this.cyclesDFS[x].toString())) {
-                            
-                    //         isUnique=false;
-                    //         break;
-                    //     }
-                    //     else if(this.cyclesDFS[x].toString().includes(subPath.toString())) {
-                    //         if(subPath.length > 2) this.cyclesDFS.splice(x,1);
-                    //         isUnique = true;
-                    //         break;
-                    //     }
-                    //     else if(subPath.length==this.cyclesDFS[x]) {
-                    //         let matches = true;
-                    //         for(let j=0; j < subPath.length; ++j) {
-                    //             if(!this.cyclesDFS[x].includes(subPath[j])) matches=false;
-                    //         }
-                    //         if(matches) isUnique = matches;
-                    //     }
-                    // }
-                    if(isUnique) {
-                        console.log("subpath",subPath);
-                        if(this.polygonExists(subPath)) {
-                            this.cyclesDFS.push(subPath); 
+               
+                // if(nextPt == subPath[0]) {
+                //     this.pathsToOrigin[nextPt].shortestPath = [subPath[0]];
+                // }
 
+                
+                if(subPath.includes(nextPt)) { 
+                    subPath = subPath.slice(subPath.indexOf(nextPt));  
+                    if(!this.polygonExists(subPath)) {
+                        if(this.polygonIsValid(subPath,true)) {
+                            this.cyclesDFS.push(subPath); 
                         }
                     }
-                    
                 }
+                // else if(this.visitedDFS[nextPt] == 1) {
+                
+                //     if(!this.polygonExists(subPath)) {
+                //         if(this.polygonIsValid(subPath,true)) {
+                //             this.cyclesDFS.push(subPath); 
+                //         }
+                //     }
+                    
+                    
+                // }
                 
                 else {
                     this.visitedDFS[nextPt] = 1;
+                    
+                    
                     this.DFS(nextPt,  subPath.concat(nextPt));
                 }
 
@@ -492,16 +553,18 @@ export class Mesh {
 
 
     depthFirstSearch() {
-        // let index = 0;
-        // var paths = [];
+
+        this.pathsToOrigin = Array(this.ptData.length).fill({shortestPath:[]});
+        
+
         for(let i =0; i < this.ptData.length;++i) {
             this.visitedDFS[i] = 0;
         }
 
-        for(let j=0; j < this.ptData.length;++j) {
-            this.ptData[j].associatedPolygons = 0;
-        }
-        this.DFS(0,[]);
+        // for(let j=0; j < this.ptData.length;++j) {
+        //     this.ptData[j].associatedPolygons = 0;
+        // }
+        this.DFS(0,[], 0);
         // for(let i =0; i < this.ptData.length; ++i) {
         //     for(let i =0; i < this.ptData.length;++i) {
         //         this.visitedDFS[i] = 0;
@@ -517,8 +580,11 @@ export class Mesh {
 
 }
 
-// export class Polygon {
-//     constructor(pts) {
-//         this.pts = pts;
-//     }
-// }
+export class Polygon {
+    constructor(meshID,vertices,parentMatrix=null) {
+        this.parentMatrix = parentMatrix;
+        this.meshID = meshID;
+        this.vertices = vertices;
+        
+    }
+}
