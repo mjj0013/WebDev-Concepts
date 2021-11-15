@@ -20,24 +20,25 @@ class NavBar extends React.Component {
 		this.getChildContext = this.getChildContext.bind(this);
 	}
 	getChildContext() {
-		return {
-			toggleSettings:this.toggleSettings,
-			toggleCalculator:this.toggleCalculator
-		}
+		return {toggleSettings:this.toggleSettings}
 	}
 
 	toggleCalculator() {
 		let w = document.getElementById("cw");
-		
+		if(w == null) return;
         if(w.style.display=="none" || w.style.display=='') {
 			
             w.style.display="block";
 			window.setInterval(w.updateAnswer, 1000);
         }
-        else { w.style.display="none"; }
+        else {
+            w.style.display="none";
+        }
 	}
 
 	toggleSettings(e) {
+		
+		
 		let w = document.getElementById("sw");
 		
         if(w.style.display=="none" || w.style.display=='') {
@@ -45,7 +46,9 @@ class NavBar extends React.Component {
             w.style.display="block";
 			//window.setInterval(w.updateAnswer, 1000);
         }
-        else { w.style.display="none"; }
+        else {
+            w.style.display="none";
+        }
 		
 		
 
@@ -63,27 +66,59 @@ class NavBar extends React.Component {
 	}
 		
 
+
+	// <Menu className="nav-menu" vertical>
+	// 	<Menu.Item className="menuItem">
+	// 		<Link to="/" className="nav-link">Home</Link>
+	// 	</Menu.Item>
+
+	// 	<Menu.Item className="menuItem">
+	// 		<Link to="/fileload" className="nav-link">File Load</Link>
+	// 	</Menu.Item>
+
+	// 	<Menu.Item className="menuItem">
+	// 		<Link to="/animation" className="nav-link">Animation</Link>
+	// 	</Menu.Item>
+
+	// 	<Menu.Item className="menuItem">
+	// 		<Link to="/game" className="nav-link">Game</Link>
+	// 	</Menu.Item>
+		
+	// 	<Menu.Item className="menuItem">
+	// 		<Button className="navBarButton" id='openCalc' onClick={this.toggleCalculator}>Calculator</Button> 
+			
+	// 		<Button className="navBarButton" id='openSettings' onClick={this.toggleSettings}>Settings</Button>
+	// 	</Menu.Item>
+	// </Menu>
+
 	render() {
 		return (	
-			<div id="navBar" class="nav-menu">
-				<Container>	
-					<Link to="/" className="nav-link">Home</Link>
+			<Menu id="navBar" className="nav-menu vertical">
+				<Container>
+					
+					<Link to="/" className="nav-link vertical">Home</Link>
 				
-					<Link to="/fileload" className="nav-link">File Load</Link>
+					<Link to="/fileload" className="nav-link vertical">File Load</Link>
 				
-					<Link to="/animation" className="nav-link">Animation</Link>
+					<Link to="/animation" className="nav-link vertical">Animation</Link>
 				
-					<Link to="/game" className="nav-link">Game</Link>
+					<Link to="/game" className="nav-link vertical">Game</Link>
 					
 					<div className="nav-item">
 						<Button className="navBarButton" id='openCalc' onClick={this.toggleCalculator}>Calculator</Button> 
 					</div>
+					
 					<div class="nav-item">
-						<Button className="navBarButton" id='openSettings' onClick={this.toggleSettings}>Settings</Button> 
-					</div>					
+						<Button className="navBarButton" id='openSettings'  onClick={this.toggleSettings}>
+							<Icon id="settingsIcon" name="cog" />
+							
+						</Button> 
+					</div>			
 				</Container>
-			</div>
+			</Menu>
 
+				
+			
 		  );
 	}
 
@@ -91,7 +126,6 @@ class NavBar extends React.Component {
 
 NavBar.childContextTypes = {
 	toggleSettings: PropTypes.func,
-	toggleCalculator: PropTypes.func,
 }
 
 
