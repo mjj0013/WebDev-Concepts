@@ -29,7 +29,7 @@ export class Mesh {
         this.pathsToOrigin = null;
 
         this.getShortestPath = this.getShortestPath.bind(this);
-
+        this.testPolygonPair = this.testPolygonPair.bind(this);
         this.getEdge = this.getEdge.bind(this);
         this.animateMesh = false;
         
@@ -286,7 +286,7 @@ export class Mesh {
 
     }
 
-    //try this one vvvvvvvv
+ 
     hasIntersection2D(segment1,segment2) {
         let x1 = segment1[0].x;
         let y1 = segment1[0].y;
@@ -394,9 +394,9 @@ export class Mesh {
     }
     polygonExists(newPolygon) {
         var result = false;
-        if(this.polygons.length==0) return result;
-        var existingPolygons = Object.values(this.polygons).map(x=>x.toString());
-        
+        if(this.cyclesDFS.length==0) return result;
+        //var existingPolygons = Object.values(this.polygons).map(x=>x.toString());
+        var existingPolygons = this.cyclesDFS.map(x=>x.toString());
         var newPolygonVersions = []
         var tempArray = Array.from(newPolygon)
         for(var i =0; i < newPolygon.length; ++i) {
@@ -407,8 +407,6 @@ export class Mesh {
             if(existingPolygons.includes(newPolygonVersions[i])) result = true;
         }
         return result;
-        
-
     }
     polygonIsValid(polygon,incrementUsageCounts=false) {
         let result = true;
@@ -434,7 +432,69 @@ export class Mesh {
             }
         }
 
+        // console.log(polygon)
+        
+        // var sortedX = polygon.map(a=>this.pts[a].x).sort();
+        // var sortedY = polygon.map(a=>this.pts[a].y).sort();
+        
+
+        
+        // let minPtX = sortedX[0];
+        // let maxPtX = sortedX[sortedX.length-1];
+        // let minPtY = sortedY[0];
+        // let maxPtY = sortedY[sortedY.length-1];
+
+
+
+        // var polygonPts = [];
+        // for(let p=0; p<polygon.length; ++p) {
+        //     polygonPts.push(this.pts[polygon[p]])
+        // }
+
+
+        
+
+        // for(let p=0; p < this.pts.length;++p) {
+        //     let pt = this.pts[p];
+        //     if((pt.x > minPtX && pt.x <maxPtX) && (pt.y > minPtY && pt.y < maxPtY)) {
+        //         let testResults = [];
+        //         for(let v=0; v < polygonPts.length; ++v) {
+        //             if(v==polygonPts.length-1) {
+        //                 let slope1 = ((polygonPts[v].y - polygonPts[0].y)/(polygonPts[v].x - polygonPts[0].x));
+        //                 let test = pt.y > slope1*pt.x + polygonPts[v].y;
+        //                 testResults.push(test);
+        //             }
+        //             else {
+        //                 let slope1 = ((polygonPts[v].y - polygonPts[v+1].y)/(polygonPts[v].x - polygonPts[v+1].x));
+        //                 let test = pt.y > slope1*pt.x + polygonPts[v].y;
+        //                 testResults.push(test);
+        //             }
+        //             if(testResults.length>=3) {
+        //                 if(testResults[v-2] != testResults[v]) {
+        //                     result = false;
+        //                     break;
+        //                 }
+        //             }
+                    
+        //         }
+        //         console.log('testResults',testResults);
+                
+
+        //     }
+        //     if(result==false) break;
+        // }
+         
+
+
+
+
+
+
+
+
+
         // ****put code here that tests if other vertices are inside the polygon****
+
 
 
         //if valid, increments each edge's "polygon membership" variable 
@@ -582,11 +642,90 @@ export class Mesh {
         console.log('cycles',this.cyclesDFS);
 
         
+        for(let c1=0; c1 < this.cyclesDFS.length; ++c1) {
+           
+            for(let c2=0; c2 < this.cyclesDFS.length; ++c2) {
+               
+                if(c1==c2) continue;
+                let cycle1 = this.cyclesDFS[c1];
+                let cycle2 = this.cyclesDFS[c2];
+
+                let result = this.testPolygonPair(cycle1,cycle2);
+                console.log("result",result, cycle1, cycle2)
+                if(result==2) {
+                    /*delete cycle2*/
+                    this.cyclesDFS.splice(c2,1);
+                }
+                else if(result==1) {
+                    /*delete cycle1*/
+                    this.cyclesDFS.splice(c1,1);
+                }
+                else if(result==0) {
+                    /*delete either (they are duplicates)*/
+                    this.cyclesDFS.splice(c1,1);
+                }
+                else if(result==-1) {
+                    /*do nothing*/
+                }
+
+            }
+        }
 
         
     }
+    testPolygonPair(polygon1,polygon2) {
+        //example: polygon1= [3,4,5,6]    polygon2=[3,5,6]
+        //          => polygon1 is overlapping polygon2
+
+        let polygon1SharesAll = true;    //true for having completely different vertices
+        let polygon2SharesAll = true;
+        for(let v=0; v < polygon1.length;++v) {     //checking if every vertex of polygon1 is in polygon2
+            if(!polygon2.includes(polygon1[v])) {
+                polygon1SharesAll = false;          //polygon1 has unique vertices
+                break;
+            }
+        }
+
+        for(let v=0; v < polygon2.length;++v) {     //checking if every vertex of polygon1 is in polygon2
+            if(!polygon1.includes(polygon2[v])) {
+                polygon2SharesAll = false;          //polygon1 has unique vertices
+                break;
+            }
+        }
+        if(polygon1SharesAll && !polygon2SharesAll) {
+           //every vertex in polygon1 is in polygon2, but polygon2 has additional vertices not in polygon1
+           //delete polygon2 because it overlaps polygon1
+           return 2;
+        }
+        else if(!polygon1SharesAll && polygon2SharesAll) {
+            //every vertex in polygon2 is in polygon1, but polygon1 has additional vertices not in polygon2
+            //delete polygon1 because it overlaps polygon2
+            return 1;
+        }
+        else if(polygon1SharesAll && polygon2SharesAll) {
+            //polygons are the same, delete one
+            return 0;
+        }
+        else {
+            //polygons are totally different, skip/continue
+            return -1;
+        }
+
+
+        
+
+
+    }
+
+
+    
 
 }
+
+
+
+
+
 
 export class Polygon {
     constructor(meshID,vertices,parentMatrix=null) {
