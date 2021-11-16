@@ -87,7 +87,8 @@ class Game extends React.Component {
         this.closeDragElement = this.closeDragElement.bind(this);
         this.elementDrag = this.elementDrag.bind(this);
         this.dragMouseDown = this.dragMouseDown.bind(this);
-        this.makeDraggable = this.makeDraggable.bind(this);
+      
+
         this.currentlyDragging=null;
         
         
@@ -106,6 +107,8 @@ class Game extends React.Component {
         this.regionSides = [];
         this.ptIdxToEdgeIdx = {}
 
+        this.testPolygon = null;
+
         
     }
 
@@ -119,16 +122,12 @@ class Game extends React.Component {
     }
 
     elementDrag(e) {    
-        //console.log(this.currentlyDragging, e.target.id);
         
         if(!(e.target.id.substr(0,2)=='pt' || e.target.id=="gameSVGBackground")) return e;
         e = e || window.event;
         e.preventDefault();
         if(e.target.id.substr(0,2)=='pt') console.log("dragging " + e.target.id);
-        // var gameSVG = document.getElementById('gameSVG');
 
-        // if(this.currentlyDragging==null) this.currentlyDragging = e.target.id
-        // else return e.preventDefault() && false;
 
         this.lastZoom.x = e.offsetX;
         this.lastZoom.y = e.offsetY;
@@ -136,26 +135,21 @@ class Game extends React.Component {
         if(this.dragStart) {
             var pt = this.getTransformedPt(this.lastZoom.x, this.lastZoom.y);
             
-            // this.dragDisplacement.x += (pt.x-this.dragStart.x)/4;
-            // this.dragDisplacement.y += (pt.y-this.dragStart.y)/4;
-            
-
             if(e.target.id=='gameSVGBackground') {
                 this.panSVG((pt.x-this.dragStart.x)/4, (pt.y-this.dragStart.y)/4)
                 
             }
             else if(e.target.id.substr(0,2)=='pt') {
                 
-                e.target.setAttributeNS(null,'cx', pt.x);
-                e.target.setAttributeNS(null,'cy', pt.y);
+                e.target.setAttribute('cx', pt.x);
+                e.target.setAttribute('cy', pt.y);
                 let ptIndex = parseInt(e.target.id.substr(2));
-                console.log(e.target.id, this.M.ptData[ptIndex].connections);
+                //console.log(e.target.id, this.M.ptData[ptIndex].connections, this.M.pts[ptIndex]);
                 this.M.pts[ptIndex].x = pt.x;
                 this.M.pts[ptIndex].y = pt.y;
               
                 for(let edge=0; edge < this.M.ptData[ptIndex].edgeIDs.length;++edge) {
                     let assocEdge = this.M.ptData[ptIndex].edgeIDs[edge];
-                    //var assocEdgeElement = document.getElementById(assocEdge);
                     
                     let ptIds = assocEdge.replace('edge','').split('_');
                     let ptA = parseInt(ptIds[0]);
@@ -164,7 +158,6 @@ class Game extends React.Component {
                     var d=``
                     
                     if(ptIds[1]== ptIndex) {
-                        //console.log('pt');
                         //the vertex being dragged is 'Y' in the 'edgeX_Y' naming convention, so change of coordinates that one  only
                         d = `M ${this.M.pts[ptA].x},${this.M.pts[ptA].y}`
                         d += `l ${this.M.pts[ptB].x - this.M.pts[ptA].x},${this.M.pts[ptB].y - this.M.pts[ptA].y}`
@@ -174,14 +167,9 @@ class Game extends React.Component {
                         d = `M ${this.M.pts[ptA].x},${this.M.pts[ptA].y}`
                         d += `l ${this.M.pts[ptB].x - this.M.pts[ptA].x},${this.M.pts[ptB].y - this.M.pts[ptA].y}`
                     }
-                    //console.log('d',d);
-                    
-                    //document.getElementById(assocEdge)
                     this.svgRef.current.getElementById(assocEdge).setAttribute('d',d);
                 }
-                
             }
-            
         }
         
       
@@ -190,25 +178,25 @@ class Game extends React.Component {
 
     dragMouseDown(e) {
         e = e || window.event;
+        //console.log("clicked", e.offsetX, e.offsetY)
+       
+
         
 
         if(this.currentlyDragging==null) {
             this.currentlyDragging = e.target.id;
             if(e.target.id.substr(0,2)=='pt') {
                 let ptIndex = parseInt(e.target.id.substr(2));
-                console.log(e.target.id, this.M.ptData[ptIndex].connections);
+                console.log(e.target.id, this.M.ptData[ptIndex].connections, this.M.pts[ptIndex], this.M.ptData[ptIndex].mappedPaths);
             }
         }
         
-        else if(this.currentlyDragging!= e.target.id) {
-            return;
-         }
+        else if(this.currentlyDragging!= e.target.id) {return;}
     
         this.lastZoom.x = e.offsetX;
         this.lastZoom.y = e.offsetY;
 
         if(e.target.id=="gameSVGBackground") {
-            //var gameSVG = document.getElementById("gameSVG");
             this.svgRef.current.style.cursor = 'grabbing'
             this.dragStart = this.getTransformedPt(this.lastZoom.x, this.lastZoom.y);
         }
@@ -218,15 +206,9 @@ class Game extends React.Component {
         return e.preventDefault() && false;
     }
 
-    makeDraggable(item_id) {
-        //var item = document.getElementById(item_id)
-        this.svgRef.current.onmousedown = this.dragMouseDown;
-        //item.onmousedown = this.dragMouseDown;
-    }
 
-    changeHue = (event) => {
-        this.backgroundHue = event.target.value;
-    }
+
+    changeHue = (event) => { this.backgroundHue = event.target.value; }
        
     initWorld = () =>{
         this.addPhysicalObject("user-ellipse", 50,50,25,25,0,0,25,'rgb(24,210,24)',true);
@@ -268,33 +250,21 @@ class Game extends React.Component {
         let newObj =  new PhysicalObject(this, this.contextRef.current, obj_type, "circle"+obj.index, x, y, width, height, dx,dy,mass,null);
         this.physicalObjects.push(newObj);
         if(isNew) { localStorage.physicalObjectMap = JSON.stringify(this.physicalObjectMap); }
-        
-        var svg_ns = "http://www.w3.org/2000/svg";
        
         let circleGroup = document.getElementById("circleGroup");
-        let newShape = document.createElementNS(svg_ns,'circle');
-        newShape.setAttributeNS(null,'id',"circle"+obj.index);
-        newShape.setAttributeNS(null,'cx',newObj.x);
-        newShape.setAttributeNS(null,'cy',newObj.y);
-        newShape.setAttributeNS(null,'r',newObj.radius);
-        newShape.setAttributeNS(null,'fill', newObj.color);
-
-        
-        //newShape.setAttribute("style","filter:url(#filter)");
-
-        
-
-
-
+        let newShape = document.createElementNS("http://www.w3.org/2000/svg",'circle');
+        newShape.setAttribute('id',"circle"+obj.index);
+        newShape.setAttribute('cx',newObj.x);
+        newShape.setAttribute('cy',newObj.y);
+        newShape.setAttribute('r',newObj.radius);
+        newShape.setAttribute('fill', newObj.color);
 
         newShape.addEventListener('click', (e) => {
             console.log("clicked obj: "+obj.index)
             this.physicalObjects[this.controlledObjectIndex].isSelected = false;
             this.physicalObjects[obj.index].isSelected = true;
             this.controlledObjectIndex = obj.index;
-
         })
-        console.log(this.physicalObjects.length);
         circleGroup.appendChild(newShape);
 
     }
@@ -308,26 +278,19 @@ class Game extends React.Component {
         if(delta) this.updateZoom(delta);
 
         this.zoomHasHappened = 1;
-        //this.zoomDeltaY = e.deltaY
         return e.preventDefault() && false;
     }
     updateZoom = (delta) => {
-
         let wheelNorm = delta;
         let zoomVar = Math.pow(this.zoomIntensity,wheelNorm);
-        // this.zoomFocusPt = this.getTransformedPt(this.lastZoom.x, this.lastZoom.y);
+       
         for(var i =0; i < 6; ++i) this.transformMatrix[i] *=(zoomVar)
         
         this.transformMatrix[4] += (1-zoomVar)*(this.lastZoom.x);
         this.transformMatrix[5] += (1-zoomVar)*(this.lastZoom.y);
 
-        // this.circleGroupRef.current.setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-        //document.getElementById('circleGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-        //document.getElementById('regionGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-        // this.regionGroupRef.current.setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         this.meshGroupRef.current.setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         this.zoomHasHappened = 0;
-        
     }
     getTransformedPt(x,y) {
         var focalPt = new DOMPoint();
@@ -340,13 +303,7 @@ class Game extends React.Component {
     panSVG(dx,dy) {
         this.transformMatrix[4] += dx;
         this.transformMatrix[5] += dy;
-
-        //this.circleGroupRef.current.setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-        //document.getElementById('circleGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-        //this.regionGroupRef.current.setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         this.meshGroupRef.current.setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-        
-        //document.getElementById('regionGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
     }
    
     moveObj = (key) => {
@@ -392,11 +349,8 @@ class Game extends React.Component {
             );
         }
         
-        console.log("this.physicalObjects.length: " + this.physicalObjects.length);
-        
     }
     componentDidUpdate = () => {
-        //this.contextRef.current = this.canvasRef.current.getContext('2d');
         setInterval(
             () => {
                 this.update();
@@ -406,17 +360,14 @@ class Game extends React.Component {
 
     }
     componentDidMount = () => {
-        
         this.M = new Mesh(this);
         
         this.svgRef.current.addEventListener("wheel",this.captureZoomEvent,false);
         this.svgRef.current.addEventListener("DOMMouseScroll", this.captureZoomEvent,false);
         this.svgRef.current.addEventListener("contextmenu", e => e.preventDefault());           //prevent context menu on right click, only for gameSVG 
 
-
-        
-        //this.makeDraggable('gameCanvas');
-        this.makeDraggable('gameSVG');
+      
+        this.svgRef.current.onmousedown = this.dragMouseDown;
         setInterval(
             () => {
             this.update();
@@ -452,7 +403,7 @@ class Game extends React.Component {
                 if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
                     e.preventDefault();
                 }
-                if(e.code=='Space') {this.generateRandomMesh(25,2);}
+                if(e.code=='Space') {this.generateRandomMesh(25,2);}    //try 25
                 if(e.code=='KeyQ') {
                     if(document.getElementById("polyGroup").getAttribute("visibility")=="hidden") {
                         document.getElementById("polyGroup").setAttribute("visibility","visible");
@@ -557,15 +508,14 @@ class Game extends React.Component {
             
             for(var i=0; i < this.physicalObjects; ++i) {
                 let tempObj = {x:x, y:y, radius:radius};
-                //tempObj = this.physicalObjects[i];
+               
                 let collides = this.collidesWith(this.physicalObjects[i], tempObj)
-                //let collides = this.physicalObjects[i].circle2circle(this.physicalObjects[i], tempObj,true);
+               
                 if(collides) {
                     ++num_of_failures;
                     break;
                 }
             }
-
             foundSpot = true;
         }  
         if(foundSpot) this.addPhysicalObject("user-ellipse",x,y,radius,radius,0,0,mass,null,true);
@@ -615,11 +565,9 @@ class Game extends React.Component {
         
         //connect points
         this.M.generateEdges();
-       
-
         this.M.depthFirstSearch();
         
-        //let regionGroup = document.getElementById("regionGroup");
+     
         for(let p=0; p < this.M.pts.length;++p) {
             let newPt = document.createElementNS("http://www.w3.org/2000/svg",'circle');
             //let newPt = this.regionGroupRef.current.createElementNS("http://www.w3.org/2000/svg",'circle');
@@ -628,10 +576,6 @@ class Game extends React.Component {
             newPt.setAttribute('cx', this.M.pts[p].x);
             newPt.setAttribute('cy', this.M.pts[p].y);
             newPt.setAttribute('r', 6);
-            // newPt.setAttribute('fill', 'black');
-            //newPt.setAttribute('ref',this.regionGroupRef);
-         
-            //newPt.appendChild(newMovement);
             newPt.onmousedown = this.dragMouseDown;
             this.regionGroupRef.current.appendChild(newPt);
         }
@@ -666,12 +610,21 @@ class Game extends React.Component {
             
             let d = ``;
             for(let c=0; c < this.M.cyclesDFS[m].length; ++c) {
+                if(c==this.M.cyclesDFS[m].length-1) {
+                    this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][0]).associatedPolygons.push(`polygon${m}`);
+                }
+                else {
+                    console.log("this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][c+1])",this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][c+1]))
+                    this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][c+1]).associatedPolygons.push(`polygon${m}`);
+                }
+
+
                 if(c==0) d += `M ${this.M.pts[this.M.cyclesDFS[m][c]].x},${this.M.pts[this.M.cyclesDFS[m][c]].y}`
                 else d += `L ${this.M.pts[this.M.cyclesDFS[m][c]].x},${this.M.pts[this.M.cyclesDFS[m][c]].y}`
                 
             }
             d += `L ${this.M.pts[this.M.cyclesDFS[m][0]].x},${this.M.pts[this.M.cyclesDFS[m][0]].y}`
-
+            
             polygonElement.setAttribute('d',d);
             this.M.polygons[`polygon${m}`] = newPolygon;
             polygonElement.onmousedown = (e) => {console.log('vertices: ', this.M.polygons[`polygon${m}`].vertices)}
@@ -679,7 +632,8 @@ class Game extends React.Component {
             // let light = getRandomInt(0,100);
             // polygonElement.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
             document.getElementById("polyGroup").appendChild(polygonElement);
-            //this.regionGroupRef.current.appendChild(polygonElement); 
+           
+          
         }
         //*************************************************************************************************************** */
         //track polygons (Method 1)

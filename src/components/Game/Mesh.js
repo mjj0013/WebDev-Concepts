@@ -1,4 +1,4 @@
-import { det,getRandomInt } from "../utility.js";
+import { det, getRandomInt, midpoint } from "../utility.js";
 
 export class Mesh {
     constructor(parent, pts=null) {
@@ -26,17 +26,20 @@ export class Mesh {
         this.generateEdges = this.generateEdges.bind(this);
         this.build = this.build.bind(this);
 
-        this.pathsToOrigin = null;
+        //this.pathsToOrigin = null;
 
-        this.getShortestPath = this.getShortestPath.bind(this);
+        this.mapShortestPaths = this.mapShortestPaths.bind(this);
+        
         this.testPolygonPair = this.testPolygonPair.bind(this);
         this.getEdge = this.getEdge.bind(this);
         this.animateMesh = false;
+
+        this.phase = 0;
         
        
     }
 
-    build(numPts, random=false) {
+    build(numPts, random=false,minDistBwPts=20) {
         const summation = (previousValue, currentValue) => previousValue + currentValue;
         if(!random) {
             for(let i=0; i < numPts;++i) {
@@ -58,6 +61,19 @@ export class Mesh {
                 this.pts.push({x:x, y:y});
 
             }
+
+            //"merge" points that are minimum distance b/w each other (minDistBwPts)
+            for(let i=0; i < this.pts.length; ++i) {
+                let thisPt = this.pts[i];
+                for(let j=0; j < this.pts.length; ++j){
+                    let otherPt =  this.pts[j];
+                    let squaredDist = (thisPt.x-otherPt.x)*(thisPt.x-otherPt.x) + (thisPt.y-otherPt.y)*(thisPt.y-otherPt.y);
+                    if(squaredDist < (minDistBwPts*minDistBwPts)) {
+                        this.pts.splice(j,1);
+                    }
+                }
+            }
+
             //find closest points for each point
             for(let i=0; i < this.pts.length; ++i) {
                 let thisPt = this.pts[i];
@@ -75,14 +91,19 @@ export class Mesh {
                 
                 topPts = topPts.map(x=> {return x.squaredDist});
                 let closestAvgDist = topPts.reduce(summation)/topPercentile
+                
+                let animationPhase = getRandomInt(0, 360);
 
                 this.ptData.push({
                     index:i, 
                     closestPts:closestPts, 
                     connections:[], 
+                    mappedPaths:{},
                     edgeIDs:[], 
                     closestAvgDist:closestAvgDist,
-                    associatedPolygons:0});
+                    associatedPolygons:0,
+                    animationPhase:animationPhase
+                });
             }
         }
         
@@ -93,10 +114,9 @@ export class Mesh {
         sortedByDensity.sort( function(a,b) {
             return a.closestAvgDist - b.closestAvgDist;
         });
-        console.log('sortedByDensity',sortedByDensity)
 
-        //using sortedByDensity to start with the points that are most strongly connected 
-        // strongly connected  ==> (least average distance between closest neighbors)
+        //  using sortedByDensity to start with the points that are most strongly connected 
+        //  strongly connected  ==> (least average distance between closest neighbors)
         for(let a=0; a < sortedByDensity.length; ++a) {
             //  closestPts[0] ===> closest point
             //  closestPts[numPts-1] ==> farthest point
@@ -130,7 +150,9 @@ export class Mesh {
                                 this.edges.push({               //add new edge to edges
                                     id:`edge${pt1}_${pt2}`, 
                                     data:[pt1,pt2],
-                                    polygonUsageCount:0 });    
+                                    polygonUsageCount:0,
+                                    associatedPolygons:[]
+                                });    
                             
                                 //makes it possible to adjust associated edges whenever a vertex is dragged
                                 if(!this.ptData[pt1].edgeIDs.includes(`edge${pt1}_${pt2}`) && !this.ptData[pt1].edgeIDs.includes(`edge${pt2}_${pt1}`)) {
@@ -139,58 +161,12 @@ export class Mesh {
                                 if(!this.ptData[pt2].edgeIDs.includes(`edge${pt1}_${pt2}`) && !this.ptData[pt2].edgeIDs.includes(`edge${pt2}_${pt1}`)) {
                                     this.ptData[pt2].edgeIDs.push(`edge${pt1}_${pt2}`);
                                 }  
-                            }
-                                         
+                            }          
                         }
                     }
                 }
             }
         }
-        // for(let a=0; a < this.pts.length; ++a) {
-        //     //  closestPts[0] ===> closest point
-        //     //  closestPts[numPts-1] ==> farthest point
-            
-        //     //first try this: find set-intersections of the top 5 closest points to point A
-        //     let aTop5 = this.ptData[a].closestPts.map(x=>{return x.index;}).slice(0,4);
-        //     let bTop5 = this.ptData[aTop5[0]].closestPts.map(x=>{return x.index;}).slice(0,4);
-        //     let cTop5 = this.ptData[aTop5[1]].closestPts.map(x=>{return x.index;}).slice(0,4);
-        //     let dTop5 = this.ptData[aTop5[2]].closestPts.map(x=>{return x.index;}).slice(0,4);
-         
-
-        //     //designed to handle dense groups of points first
-        //     let commonTopPts = aTop5.concat(bTop5,cTop5,dTop5);
-        //     commonTopPts = commonTopPts.filter(p => aTop5.includes(p));
-        //     commonTopPts = commonTopPts.filter(p => bTop5.includes(p));
-        //     commonTopPts = commonTopPts.filter(p => cTop5.includes(p));
-        //     commonTopPts = commonTopPts.filter(p => dTop5.includes(p));
-        //     commonTopPts = commonTopPts.concat(aTop5);
-            
-        //     for(let p=0; p < commonTopPts.length; ++p) {
-        //         for(let p2=0; p2 < commonTopPts.length; ++p2) {
-        //             if(p==p2) continue;
-        //             if(commonTopPts[p]==commonTopPts[p2]) continue;
-        //             let pt1 = commonTopPts[p];
-        //             let pt2 = commonTopPts[p2];
-        //             if(!this.edgeExists(pt1,pt2)) {
-        //                 if(this.evalNewEdge([this.pts[pt1],  this.pts[pt2]])) {
-                            
-        //                     this.ptData[pt2].connections.push(pt1);                 //add node a to node b's connections 
-        //                     this.ptData[pt1].connections.push(pt2);   //add node b to node a's connections 
-                            
-        //                     this.edges.push({id:`edge${pt1}_${pt2}`, data:[pt1,pt2]});    //add new edge to edges
-                           
-        //                     //makes it possible to adjust associated edges whenever a vertex is dragged
-        //                     if(!this.ptData[pt1].edgeIDs.includes(`edge${pt1}_${pt2}`) && !this.ptData[pt1].edgeIDs.includes(`edge${pt2}_${pt1}`)) {
-        //                         this.ptData[pt1].edgeIDs.push(`edge${pt1}_${pt2}`);
-        //                     }
-        //                     if(!this.ptData[pt2].edgeIDs.includes(`edge${pt1}_${pt2}`) && !this.ptData[pt2].edgeIDs.includes(`edge${pt2}_${pt1}`)) {
-        //                         this.ptData[pt2].edgeIDs.push(`edge${pt1}_${pt2}`);
-        //                     }               
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
 
         //handle stragglers
         this.handleStragglers();
@@ -208,46 +184,66 @@ export class Mesh {
 
         var angle = Math.atan2(dxLineA*dyLineB - dyLineA*dxLineB, dxLineA*dxLineB + dyLineA*dyLineB);
         angle = angle<0? angle*=-1 : angle;
-        console.log("angle", angle*(180/Math.PI));
+        //console.log("angle", angle*(180/Math.PI));
         return angle*(180/Math.PI);
 
 
     }
 
     update() {
+        ++this.phase;
         if(this.animateMesh) {
             for(let ptIndex=0; ptIndex < this.pts.length; ++ptIndex) {
                 if(getRandomInt(0,2)==1) {
-                    this.pts[ptIndex].x += getRandomInt(-8,8)*Math.exp(1/5);
-                    this.pts[ptIndex].y += getRandomInt(-8,8)*Math.exp(1/5);
+                    this.pts[ptIndex].x += 5*Math.cos(Math.PI*this.phase/100 + Math.PI*this.ptData[ptIndex].animationPhase/100);
+                    this.pts[ptIndex].y += 5*Math.sin(Math.PI*this.phase/100 + Math.PI*this.ptData[ptIndex].animationPhase/100);
+                    // this.pts[ptIndex].x += getRandomInt(-8,8)*Math.exp(1/5);
+                    // this.pts[ptIndex].y += getRandomInt(-8,8)*Math.exp(1/5);
                     document.getElementById("pt"+ptIndex).setAttribute("cx", this.pts[ptIndex].x);
                     document.getElementById("pt"+ptIndex).setAttribute("cy", this.pts[ptIndex].y);
                 }
                 for(let edge=0; edge < this.ptData[ptIndex].edgeIDs.length;++edge) {
                     let assocEdge = this.ptData[ptIndex].edgeIDs[edge];
+                   
                     let ptIds = assocEdge.replace('edge','').split('_');
                     let ptA = parseInt(ptIds[0]);
                     let ptB = parseInt(ptIds[1]);
-                    var d=``
+                    let assocEdgeData = this.getEdge(ptA,ptB);
+                    var d=``;
                     if(ptIds[1]== ptIndex) {
                         //the vertex being dragged is 'Y' in the 'edgeX_Y' naming convention, so change of coordinates that one  only
                         d = `M ${this.pts[ptA].x},${this.pts[ptA].y}`
-                        d += `L ${this.pts[ptB].x},${this.pts[ptB].y}`
+                        d += `l ${this.pts[ptB].x - this.pts[ptA].x},${this.pts[ptB].y - this.pts[ptA].y}`
+
                     }
                     else {
                         //the vertex being dragged is 'X' in the 'edgeX_Y' naming convention, so change  coordinates of that one only
                         d = `M ${this.pts[ptA].x},${this.pts[ptA].y}`
-                        d += `L ${this.pts[ptB].x},${this.pts[ptB].y}`
+                        d += `l ${this.pts[ptB].x - this.pts[ptA].x},${this.pts[ptB].y - this.pts[ptA].y}`
                     }
+
+
                     document.getElementById(assocEdge).setAttribute('d',d);
+
+                    for(let poly=0; poly < assocEdgeData.associatedPolygons.length;++poly) {
+                        let polyID = assocEdgeData.associatedPolygons[poly];
+                        let d2 = ``;
+                        let polyLen = this.polygons[polyID].vertices.length;
+                        for(let c=0; c < this.polygons[polyID].vertices.length; ++c) {
+                            if(c==0) d2 += `M ${this.pts[this.polygons[polyID].vertices[c]].x},${this.pts[this.polygons[polyID].vertices[c]].y}`
+                            else {
+                                d2 += `L ${this.pts[this.polygons[polyID].vertices[c]].x},${this.pts[this.polygons[polyID].vertices[c]].y}`
+                                //d2 += `l ${this.pts[this.polygons[polyID].vertices[c]].x - this.pts[this.polygons[polyID].vertices[c-1]].x},${this.pts[this.polygons[polyID].vertices[c]].y - this.pts[this.polygons[polyID].vertices[c-1]].y}`
+                            }
+                        }
+                        d2 += `L ${this.pts[this.polygons[polyID].vertices[0]].x},${this.pts[this.polygons[polyID].vertices[0]].y}`
+                        //d2 += `l ${this.pts[this.polygons[polyID].vertices[0]].x - this.pts[this.polygons[polyID].vertices[polyLen-1]].x},${this.pts[this.polygons[polyID].vertices[0]].y - this.pts[this.polygons[polyID].vertices[polyLen-1]].y}`
+                        document.getElementById(polyID).setAttribute('d',d2);
+                    }
                 }
             }
-
-           
         }
-        
     }
-
 
     evalNewEdge(pt1,pt2) {
         let newEdge = [this.pts[pt1],  this.pts[pt2]]
@@ -274,19 +270,11 @@ export class Mesh {
         return !((this.edges.find(l=>l.data[0]==ptB && l.data[1]==ptA)==undefined) && (this.edges.find(l=>l.data[0]==ptA && l.data[1]==ptB)==undefined));
     }
 
-    getShortestPath(ptA, ptB, omitVertices=null) {
-        if(edgeExists(ptA,ptB)) return 1;   //means they are directly connected
-        else {
-            var paths = [];
-            
-            for(let i =0; i < this.ptData[ptA].connections; ++i) {
-                this.ptData[ptA].connections[i]
-            }
-        }
-
+    mapShortestPaths(ptA, ptB) {
+        if(this.edgeExists(ptA,ptB)) return 1;   //means they are directly connected
+        else {    this.DFS(ptA,[],ptB, 'pt');  }
     }
 
- 
     hasIntersection2D(segment1,segment2) {
         let x1 = segment1[0].x;
         let y1 = segment1[0].y;
@@ -311,12 +299,8 @@ export class Mesh {
         let yCoord = yNumerator/denominator;
 
         
-        if((xCoord==segment1[0].x && yCoord==segment1[0].y) || 
-            (xCoord==segment1[1].x && yCoord==segment1[1].y) ||
-            (xCoord==segment2[0].x && yCoord==segment2[0].y) ||
-            (xCoord==segment2[1].x && yCoord==segment2[1].y)
-            
-            ) {return false;}
+        if((xCoord==segment1[0].x && yCoord==segment1[0].y) ||  (xCoord==segment1[1].x && yCoord==segment1[1].y) ||  (xCoord==segment2[0].x && yCoord==segment2[0].y) ||  (xCoord==segment2[1].x && yCoord==segment2[1].y)) {
+            return false;   }
    
         
         let onSegment1X = Math.min(segment1[0].x,segment1[1].x) <= xCoord &&  xCoord <= Math.max(segment1[0].x,segment1[1].x);
@@ -350,7 +334,7 @@ export class Mesh {
                             
                                 nextClosestPtObj.connections.push(p);                 //add node a to node b's connections 
                                 this.ptData[p].connections.push(nextClosestPt.index);   //add node b to node a's connections 
-                                this.edges.push({id:`edge${p}_${nextClosestPt.index}`, data:[p,nextClosestPt.index]});    //add new edge to edges
+                                this.edges.push({id:`edge${p}_${nextClosestPt.index}`, data:[p,nextClosestPt.index], associatedPolygons:[]});    //add new edge to edges
         
                                 //makes it possible to adjust associated edges whenever a vertex is dragged
                                 if(!this.ptData[p].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`) && !this.ptData[p].edgeIDs.includes(`edge${nextClosestPt.index}_${p}`)) this.ptData[p].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
@@ -375,11 +359,9 @@ export class Mesh {
                                     
                                     nextClosestPtObj.connections.push(p);                 //add node a to node b's connections 
                                     this.ptData[p].connections.push(nextClosestPt.index);   //add node b to node a's connections 
-                                    this.edges.push({id:`edge${p}_${nextClosestPt.index}`, data:[p,nextClosestPt.index]});    //add new edge to edges
+                                    this.edges.push({id:`edge${p}_${nextClosestPt.index}`, data:[p,nextClosestPt.index], associatedPolygons:[]});    //add new edge to edges
             
                                     //makes it possible to adjust associated edges whenever a vertex is dragged
-                                    // if(!this.ptData[p].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`)) this.ptData[p].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
-                                    // if(!this.ptData[p2].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`)) this.ptData[nextClosestPt.index].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
 
                                     if(!this.ptData[p].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`) && !this.ptData[p].edgeIDs.includes(`edge${nextClosestPt.index}_${p}`)) this.ptData[p].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
                                     if(!this.ptData[p2].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`) && !this.ptData[p2].edgeIDs.includes(`edge${nextClosestPt.index}_${p}`)) this.ptData[p2].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
@@ -395,7 +377,7 @@ export class Mesh {
     polygonExists(newPolygon) {
         var result = false;
         if(this.cyclesDFS.length==0) return result;
-        //var existingPolygons = Object.values(this.polygons).map(x=>x.toString());
+        
         var existingPolygons = this.cyclesDFS.map(x=>x.toString());
         var newPolygonVersions = []
         var tempArray = Array.from(newPolygon)
@@ -410,49 +392,56 @@ export class Mesh {
     }
     polygonIsValid(polygon,incrementUsageCounts=false) {
         let result = true;
-        
 
         //checks if each edge is valid
         for(let i =0; i < polygon.length; ++i) {
             if(i==polygon.length-1) {
-                
-                if(this.edgeExists(polygon[i],polygon[0])==false) {result = false;}
-                else {
-                    let Edge = this.getEdge(polygon[i],polygon[0]);
-                    if(Edge.polygonUsageCount >= 2) result = false;
+
+                //check if other edges exist b/w vertices in polygon
+                for(let j=0;j < polygon.length; ++j) {
+                    if(i==j || j==0 || j==i-1) continue;
+                    if(this.edgeExists(polygon[i],polygon[j])==false) {result=false; break;}
                 }
+
+                if(result) {
+                    if(this.edgeExists(polygon[i],polygon[0])==false) {result = false;}
+                    else {
+                        let Edge = this.getEdge(polygon[i],polygon[0]);
+                        if(Edge.polygonUsageCount >= 2) result = false;
+                    }
+                }
+
+                
             }
             else {
-                
-                if(this.edgeExists(polygon[i],polygon[i+1])==false) {result=false;}
-                else {
-                    let Edge = this.getEdge(polygon[i],polygon[i+1]);
-                    if(Edge.polygonUsageCount >= 2) result = false;
+                 //check if other connections exist b/w vertices in polygon
+                for(let j=0;j < polygon.length; ++j) {
+                    if(i==j || i+1==j || j+1==i) continue;
+                    if(this.edgeExists(polygon[i],polygon[j])==false) {result=false; break;}
+
+
+                }
+                if(result) {
+                    if(this.edgeExists(polygon[i],polygon[i+1])==false) {result=false;}
+                    else {
+                        let Edge = this.getEdge(polygon[i],polygon[i+1]);
+                        if(Edge.polygonUsageCount >= 2) result = false;
+                    }
                 }
             }
         }
-
-        // console.log(polygon)
         
         // var sortedX = polygon.map(a=>this.pts[a].x).sort();
         // var sortedY = polygon.map(a=>this.pts[a].y).sort();
-        
-
         
         // let minPtX = sortedX[0];
         // let maxPtX = sortedX[sortedX.length-1];
         // let minPtY = sortedY[0];
         // let maxPtY = sortedY[sortedY.length-1];
 
-
-
         // var polygonPts = [];
-        // for(let p=0; p<polygon.length; ++p) {
-        //     polygonPts.push(this.pts[polygon[p]])
-        // }
+        // for(let p=0; p<polygon.length; ++p) { polygonPts.push(this.pts[polygon[p]]) }       //x,y coordinates of new polygon
 
-
-        
 
         // for(let p=0; p < this.pts.length;++p) {
         //     let pt = this.pts[p];
@@ -474,24 +463,13 @@ export class Mesh {
         //                     result = false;
         //                     break;
         //                 }
-        //             }
-                    
+        //             }  
         //         }
         //         console.log('testResults',testResults);
                 
-
         //     }
         //     if(result==false) break;
         // }
-         
-
-
-
-
-
-
-
-
 
         // ****put code here that tests if other vertices are inside the polygon****
 
@@ -513,21 +491,29 @@ export class Mesh {
     }
     
 
-    DFS(index,path, goal, excludeVertices=null) {
+    DFS(index,path, goal,goalType='path', excludeEdges=null) {
         var subPath = Array.from(path);    
         //var subPath = path;
         if(subPath.length==0) {       //root vertex
             this.visitedDFS[index] = 1;
             for(let i=0; i < this.ptData[index].connections.length;++i) {    //immediate connections of root vertex
                 let nextPt = this.ptData[index].connections[i];
-                if(this.ptData[index].connections[i]==index) continue;
                 if(this.getEdge(index,nextPt).polygonUsageCount >=2) continue;
-                //if(this.visitedDFS[this.ptData[index].connections[i]] == 0) {
+                if(nextPt==index) continue;
+                if(goal==nextPt && goalType=='pt') {
+                    this.visitedDFS[nextPt] = 1;
+                   
+                    if(this.ptData[subPath[0]].mappedPaths[goal]==undefined)  this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                    else {
+                        if(this.ptData[subPath[0]].mappedPaths[goal].length > subPath.length) this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                    }
+                    break;
+                }
+                
+                
                 else {
                     this.visitedDFS[this.ptData[index].connections[i]] = 1;
-                    this.pathsToOrigin[this.ptData[index].connections[i]].shortestPath = [];
-                    
-                    this.DFS(this.ptData[index].connections[i],  subPath.concat(index,this.ptData[index].connections[i]), goal  );
+                    this.DFS(nextPt,  subPath.concat(index,nextPt), goal, goalType  );
                     
                 }
             }
@@ -538,13 +524,21 @@ export class Mesh {
                 let nextPt = this.ptData[index].connections[i];
                 if(subPath[subPath.length-2] == nextPt) continue;
                 if(this.getEdge(index,nextPt).polygonUsageCount >=2) continue;
-
+                if(goal==nextPt && goalType=='pt') {
+                    this.visitedDFS[nextPt] = 1;
+                   
+                    if(this.ptData[subPath[0]].mappedPaths[goal]==undefined)  this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                    else {
+                        if(this.ptData[subPath[0]].mappedPaths[goal].length > subPath.length) this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                    }
+                    break;
+                }
                 
+
                 else {
-                //if(this.visitedDFS[this.ptData[index].connections[i]] == 0) {
                     
                     this.visitedDFS[nextPt] = 1;
-                    this.DFS(nextPt,  subPath.concat(nextPt), goal);
+                    this.DFS(nextPt,  subPath.concat(nextPt), goal, goalType);
                 }
             }
         }
@@ -554,9 +548,7 @@ export class Mesh {
                 var Edge = this.getEdge(index,nextPt);
                 if(Edge.polygonUsageCount >=2) continue;
                 if(subPath[subPath.length-2] == nextPt) continue;
-                if(nextPt == subPath[0]) {
-
-                    // this.pathsToOrigin[nextPt].shortestPath = [subPath[0]];
+                if(nextPt == goal && goalType=='path') {
                     this.visitedDFS[nextPt] = 1;
                     console.log("triangle");
 
@@ -565,11 +557,19 @@ export class Mesh {
                             this.cyclesDFS.push(subPath); 
                         }
                     }
+                }
+                else if(nextPt==goal && goalType=='pt') {
+                    this.visitedDFS[nextPt] = 1;
+                   
+                    if(this.ptData[subPath[0]].mappedPaths[goal]==undefined)  this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                    else {
+                        if(this.ptData[subPath[0]].mappedPaths[goal].length > subPath.length) this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                    }
                     
                 }
                 else {
                     this.visitedDFS[nextPt] = 1;
-                    this.DFS(nextPt,  subPath.concat(nextPt));
+                    this.DFS(nextPt,  subPath.concat(nextPt), goal, goalType);
                 }
             }
         }   
@@ -580,39 +580,35 @@ export class Mesh {
                 var Edge = this.getEdge(index,nextPt);
                 if(Edge.polygonUsageCount >=2) continue;
                 if(subPath[subPath.length-2] == nextPt) continue;
-               
-                // if(nextPt == subPath[0]) {
-                //     this.pathsToOrigin[nextPt].shortestPath = [subPath[0]];
-                // }
-
-                
-                if(subPath.includes(nextPt)) { 
-                    subPath = subPath.slice(subPath.indexOf(nextPt));  
-                    if(!this.polygonExists(subPath)) {
-                        if(this.polygonIsValid(subPath,true)) {
-                            this.cyclesDFS.push(subPath); 
+                if(goalType=='path') {
+                    if(subPath.includes(nextPt) && goalType=='path') { 
+                        var loop = subPath.slice(subPath.indexOf(nextPt));  
+                        if(!this.polygonExists(loop)) {
+                            if(this.polygonIsValid(loop,true)) {
+                                this.cyclesDFS.push(loop); 
+                            }
                         }
+                  
+                    }
+                    else {
+                        this.visitedDFS[nextPt] = 1;
+                        this.DFS(nextPt,  subPath.concat(nextPt), goal, goalType);
                     }
                 }
-                // else if(this.visitedDFS[nextPt] == 1) {
                 
-                //     if(!this.polygonExists(subPath)) {
-                //         if(this.polygonIsValid(subPath,true)) {
-                //             this.cyclesDFS.push(subPath); 
-                //         }
-                //     }
-                    
-                    
-                // }
-                
-                else {
-                    
-                    
-                    this.visitedDFS[nextPt] = 1;
-                    this.DFS(nextPt,  subPath.concat(nextPt));
+                if(goalType=='pt') {
+                    if(nextPt==goal) {
+                        this.visitedDFS[nextPt] = 1;
+                        console.log("eifejf");
+                        if(this.ptData[subPath[0]].mappedPaths[goal]==undefined)  this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                        else {
+                            if(this.ptData[subPath[0]].mappedPaths[goal].length > subPath.length) this.ptData[subPath[0]].mappedPaths[goal] = subPath;
+                        }
+                    }
+                   
                     
                 }
-
+                
             }
         }   
         return;
@@ -621,51 +617,40 @@ export class Mesh {
 
 
     depthFirstSearch() {
-
-        this.pathsToOrigin = Array(this.ptData.length).fill({shortestPath:[]});
+        //this.pathsToOrigin = Array(this.ptData.length).fill({shortestPath:[]});
         
-
         for(let i =0; i < this.ptData.length;++i) {
             this.visitedDFS[i] = 0;
         }
 
-        // for(let j=0; j < this.ptData.length;++j) {
-        //     this.ptData[j].associatedPolygons = 0;
-        // }
-        this.DFS(0,[], 0);
-        // for(let i =0; i < this.ptData.length; ++i) {
-        //     for(let i =0; i < this.ptData.length;++i) {
-        //         this.visitedDFS[i] = 0;
-        //     }
-        //     this.DFS(i,[]);
-        // }
+        for(let j=0; j < this.ptData.length;++j) {
+            this.ptData[j].associatedPolygons = 0;
+        }
+        this.DFS(0,[], 0, 'path');
+       
         console.log('cycles',this.cyclesDFS);
 
+        // for(let i=0; i < this.ptData.length; ++i) {
+        //     for(let j=0; j < this.ptData.length;++j) {
+        //         if(i==j) continue;
+        //         this.mapShortestPaths(i,j);
+        //     }
+        // }
         
         for(let c1=0; c1 < this.cyclesDFS.length; ++c1) {
-           
             for(let c2=0; c2 < this.cyclesDFS.length; ++c2) {
                
                 if(c1==c2) continue;
                 let cycle1 = this.cyclesDFS[c1];
                 let cycle2 = this.cyclesDFS[c2];
-
-                let result = this.testPolygonPair(cycle1,cycle2);
+                let result= this.testPolygonPair(cycle1,cycle2);
+ 
                 console.log("result",result, cycle1, cycle2)
-                if(result==2) {
-                    /*delete cycle2*/
+                if(result==2) {     /*delete cycle2*/
                     this.cyclesDFS.splice(c2,1);
                 }
-                else if(result==1) {
-                    /*delete cycle1*/
+                else if(result==1) {     /*delete cycle1*/
                     this.cyclesDFS.splice(c1,1);
-                }
-                else if(result==0) {
-                    /*delete either (they are duplicates)*/
-                    this.cyclesDFS.splice(c1,1);
-                }
-                else if(result==-1) {
-                    /*do nothing*/
                 }
 
             }
@@ -677,55 +662,55 @@ export class Mesh {
         //example: polygon1= [3,4,5,6]    polygon2=[3,5,6]
         //          => polygon1 is overlapping polygon2
 
-        let polygon1SharesAll = true;    //true for having completely different vertices
-        let polygon2SharesAll = true;
-        for(let v=0; v < polygon1.length;++v) {     //checking if every vertex of polygon1 is in polygon2
-            if(!polygon2.includes(polygon1[v])) {
-                polygon1SharesAll = false;          //polygon1 has unique vertices
-                break;
-            }
-        }
-
-        for(let v=0; v < polygon2.length;++v) {     //checking if every vertex of polygon1 is in polygon2
-            if(!polygon1.includes(polygon2[v])) {
-                polygon2SharesAll = false;          //polygon1 has unique vertices
-                break;
-            }
-        }
-        if(polygon1SharesAll && !polygon2SharesAll) {
-           //every vertex in polygon1 is in polygon2, but polygon2 has additional vertices not in polygon1
-           //delete polygon2 because it overlaps polygon1
-           return 2;
-        }
-        else if(!polygon1SharesAll && polygon2SharesAll) {
-            //every vertex in polygon2 is in polygon1, but polygon1 has additional vertices not in polygon2
-            //delete polygon1 because it overlaps polygon2
-            return 1;
-        }
-        else if(polygon1SharesAll && polygon2SharesAll) {
-            //polygons are the same, delete one
-            return 0;
-        }
-        else {
-            //polygons are totally different, skip/continue
-            return -1;
-        }
-
-
         
+        let intersection = polygon1.filter(x => polygon2.includes(x));
+        if(polygon1.length==intersection.length && polygon2.length>intersection.length) return 2;
+            
+        
+        if(polygon2.length==intersection.length && polygon1.length>intersection.length) return 1;
+            
+        
+        let polygon1In2 = false;
+        let polygon2In1 = false;
+        
+        let uniqueTo1 = polygon1.filter(x => !polygon2.includes(x))
+        let uniqueTo2 = polygon2.filter(x => !polygon1.includes(x))
 
+        var sortedX = polygon1.map(a=>this.pts[a].x).sort();
+        var sortedY = polygon1.map(a=>this.pts[a].y).sort();
+
+        var polygonPts = [];
+        for(let p=0; p<polygon1.length; ++p) { polygonPts.push(this.pts[polygon1[p]]) }       //x,y coordinates of new polygon
+
+
+
+        for(let p=0; p < uniqueTo2.length;++p) {
+            let pt = uniqueTo2[p];
+            if((pt.x > sortedX[0] && pt.x <sortedX[sortedX.length-1]) && (pt.y > sortedY[0] && pt.y < sortedY[sortedY.length-1])) {
+                //let testResults = [];
+                polygon2In1 = true;
+                break;
+            }
+            
+        }
+        sortedX = polygon2.map(a=>this.pts[a].x).sort();
+        sortedY = polygon2.map(a=>this.pts[a].y).sort();
+
+        polygonPts = [];
+        for(let p=0; p<polygon2.length; ++p) { polygonPts.push(this.pts[polygon2[p]]) }
+        for(let p=0; p < uniqueTo1.length;++p) {
+            let pt = uniqueTo1[p];
+            if((pt.x > sortedX[0] && pt.x <sortedX[sortedX.length-1]) && (pt.y > sortedY[0] && pt.y < sortedY[sortedY.length-1])) {
+                polygon1In2 = true;
+                break;
+            }
+        }
+        if(polygon1In2 && !polygon2In1) {   return 2; }
+        if(polygon2In1 && !polygon1In2) {  return 1; }
 
     }
 
-
-    
-
 }
-
-
-
-
-
 
 export class Polygon {
     constructor(meshID,vertices,parentMatrix=null) {
