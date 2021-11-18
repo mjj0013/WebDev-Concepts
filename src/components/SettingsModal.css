@@ -1,5 +1,3 @@
-
-
 .settingsWindow {
     position: absolute;
     font-family: system-ui;
@@ -77,4 +75,3 @@
     display:grid;
     grid-template-columns: repeat(4,100px);;
 }
-

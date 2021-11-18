@@ -14,7 +14,6 @@ import PropTypes from 'prop-types';
 class NavBar extends React.Component {
 	constructor(props) {
 		super(props);
-
 		this.toggleSettings = this.toggleSettings.bind(this);
 		this.toggleCalculator = this.toggleCalculator.bind(this);
 		this.getChildContext = this.getChildContext.bind(this);
@@ -22,6 +21,7 @@ class NavBar extends React.Component {
 	getChildContext() {
 		return {toggleSettings:this.toggleSettings}
 	}
+
 
 	toggleCalculator() {
 		let w = document.getElementById("cw");
@@ -31,78 +31,32 @@ class NavBar extends React.Component {
             w.style.display="block";
 			window.setInterval(w.updateAnswer, 1000);
         }
-        else {
-            w.style.display="none";
-        }
+        else w.style.display="none";
+        
 	}
 
 	toggleSettings(e) {
-		
-		
 		let w = document.getElementById("sw");
 		
-        if(w.style.display=="none" || w.style.display=='') {
-			
-            w.style.display="block";
-			//window.setInterval(w.updateAnswer, 1000);
-        }
-        else {
-            w.style.display="none";
-        }
-		
-		
+        if(w.style.display=="none" || w.style.display=='') { w.style.display="block"; }
+        else w.style.display="none";
 
 		if(e.target.id=="calcSettingsButton") {		//settings request came from calculator
 			console.log("calculator button requested settings")
-
-			//document.getElementById('elementSettingsPage').appendChild(this.calculatorSpecificSettings());
 			console.log(document.getElementById('elementSettingsPage'));
-			
 		}
 
-		if(e.target.id=="homeSettingsButton") {		//settings request came from Home Page
-			console.log("home button requested settings")
-		}
+		//settings request came from Home Page
+		if(e.target.id=="homeSettingsButton") {	console.log("home button requested settings"); }
 	}
-		
-
-
-	// <Menu className="nav-menu" vertical>
-	// 	<Menu.Item className="menuItem">
-	// 		<Link to="/" className="nav-link">Home</Link>
-	// 	</Menu.Item>
-
-	// 	<Menu.Item className="menuItem">
-	// 		<Link to="/fileload" className="nav-link">File Load</Link>
-	// 	</Menu.Item>
-
-	// 	<Menu.Item className="menuItem">
-	// 		<Link to="/animation" className="nav-link">Animation</Link>
-	// 	</Menu.Item>
-
-	// 	<Menu.Item className="menuItem">
-	// 		<Link to="/game" className="nav-link">Game</Link>
-	// 	</Menu.Item>
-		
-	// 	<Menu.Item className="menuItem">
-	// 		<Button className="navBarButton" id='openCalc' onClick={this.toggleCalculator}>Calculator</Button> 
-			
-	// 		<Button className="navBarButton" id='openSettings' onClick={this.toggleSettings}>Settings</Button>
-	// 	</Menu.Item>
-	// </Menu>
-
 	render() {
 		return (	
-			<Menu id="navBar" className="nav-menu vertical">
+			<Menu id="navBar" className="nav-menu">
 				<Container>
-					
-					<Link to="/" className="nav-link vertical">Home</Link>
-				
-					<Link to="/fileload" className="nav-link vertical">File Load</Link>
-				
-					<Link to="/animation" className="nav-link vertical">Animation</Link>
-				
-					<Link to="/game" className="nav-link vertical">Game</Link>
+					<Link to="/" className="nav-link item">Home</Link>
+					<Link to="/fileload" className="nav-link item">File Load</Link>
+					<Link to="/animation" className="nav-link item">Animation</Link>
+					<Link to="/game" className="nav-link item">Game</Link>
 					
 					<div className="nav-item">
 						<Button className="navBarButton" id='openCalc' onClick={this.toggleCalculator}>Calculator</Button> 
@@ -111,21 +65,43 @@ class NavBar extends React.Component {
 					<div class="nav-item">
 						<Button className="navBarButton" id='openSettings'  onClick={this.toggleSettings}>
 							<Icon id="settingsIcon" name="cog" />
-							
 						</Button> 
-					</div>			
+					</div>
+							
 				</Container>
 			</Menu>
-
-				
-			
 		  );
 	}
+
+	// render() {
+	// 	return (	
+	// 		<Menu id="navBar" className="nav-menu vertical">
+	// 			<Container>
+	// 				<Link to="/" className="nav-link vertical">Home</Link>
+	// 				<Link to="/fileload" className="nav-link vertical">File Load</Link>
+	// 				<Link to="/animation" className="nav-link vertical">Animation</Link>
+	// 				<Link to="/game" className="nav-link vertical">Game</Link>
+					
+	// 				<div className="nav-item">
+	// 					<Button className="navBarButton" id='openCalc' onClick={this.toggleCalculator}>Calculator</Button> 
+	// 				</div>
+					
+	// 				<div class="nav-item">
+	// 					<Button className="navBarButton" id='openSettings'  onClick={this.toggleSettings}>
+	// 						<Icon id="settingsIcon" name="cog" />
+	// 					</Button> 
+	// 				</div>
+							
+	// 			</Container>
+	// 		</Menu>
+	// 	  );
+	// }
 
 }
 
 NavBar.childContextTypes = {
 	toggleSettings: PropTypes.func,
+	toggleCalculator: PropTypes.func,
 }
 
 

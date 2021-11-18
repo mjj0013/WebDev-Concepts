@@ -5,7 +5,7 @@ import React from 'react';
 import { Switch, BrowserRouter, Route } from 'react-router-dom';
 
 import DynamicPage from './DynamicPage'; 
-import BasicForm from './PersonFormPage';
+
 import GraphicsPage from './GraphicsPage';
 
 //import Loading from './Loading';
@@ -16,10 +16,7 @@ import Game from './Game/Game';
 
 window.addEventListener('beforeunload', event => {
 	event.preventDefault();
-	window.localStorage.clear();
-	//event.returnValue = 'Are you sure?'
-	
-	
+	window.localStorage.clear();	
 	
 });
 
@@ -29,13 +26,10 @@ function App() {
 		<BrowserRouter>
 			<div>
 				<Switch>
-					
 					<Route path="/fileload" component={DynamicPage} />
-					
 					<Route path="/animation" component={GraphicsPage} />
 					<Route path="/game" component={Game} />
 					<Route  path="/" component={Home} />
-					
 				</Switch>
 			</div>
 			
@@ -44,8 +38,6 @@ function App() {
 }
 
 //export default hot(App);
-
-
 export default App;
 
 

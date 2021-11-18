@@ -1,6 +1,9 @@
 body {
 	--nav-width:200px;
-	margin: 0 0 0 var(--nav-width);
+	--navLink-height:50px;
+	--navLink-width:200px;
+	/* margin: 0 0 0 var(--nav-width); */
+	margin: var(--nav-width) 0 0 0;
 	font-family: 'Quicksand', sans-serif;
 	font-variant: small-caps;
 	font-size:18px;
@@ -9,21 +12,22 @@ body {
 	
 	
 }
-.nav-menu{
+.nav-body {
+	position:fixed;
+	top:0;
+	left:0;
+	height: var(--nav-width);
+}
+.nav-menu {
 	position:fixed;
 	top: 0;
 	left: 0;
+	/* width: var(--nav-width);
+	height: 100vh; */
+	height: var(--navLink-height);
+	width: 100vw;
 	background-color:#2222229d;
 	z-index:4;
-}
-.nav-menu.horizontal {
-	height: var(--nav-width);
-	width: 100vw;
-}
-
-.nav-menu.vertical {
-	height: 100vh;
-	width: var(--nav-width);
 }
 
 .homeLayout {
@@ -31,19 +35,13 @@ body {
 }
 
 .nav-link {
+	height: var(--navLink-height);
 	display: block;
-	font-weight: 500;
+	padding: 12px 18px;
 	text-decoration: none;
 	color:#eeeeee;
-	padding: 12px 18px;
-}
-
-.nav-link.vertical {
 	
-	
-	
-	
-	
+	font-weight: 500;
 	background-image: linear-gradient(to right,#222222,25%,#61d444,50%,#222222);
 	background-size:300%; 
 	background-position: center;
@@ -182,11 +180,11 @@ a {
 	
 }
 
-#gameCanvas {
+/* #gameCanvas {
 	display:block;
 	visibility:hidden;
 
-}
+} */
 
 
 #gameSVG {
@@ -247,10 +245,6 @@ select {
 	}	
 }
 
-/* #ballsVisibilityButton {
-	
-} */
-
 
 .gameCanvas {
 	--gameCanvasWidth: 800px;
@@ -270,24 +264,7 @@ select {
 	cursor:grab;
 
 }
- 
 
-.gameCanvasResizeButton {
-	
-	width:25px;
-	height:25px;
-	
-	cursor:move;
-	z-index:9;
-	background-color: gray;
-	position:absolute;
-	/* position:absolute;
-	left:calc(var(--gameCanvasWidth)+1125px);
-	top:calc(var(--gameCanvasHeight)+675px); */
-	border: 1px solid black ;
-	
-	
-}
 #gameControlPanel {
 	/* box-shadow:10px 5px 5px black;  */
 	display: grid;
@@ -301,9 +278,6 @@ select {
 	margin-right:25px;
 	/* outline-style: inset;  */
 	fill: rgba(18, 25, 32, 0.75);
-
-	font-variant: small-caps;
-	font-size:16px;
 	
 }
 
@@ -313,17 +287,6 @@ select {
 	
 	left:15vw;
 }
-
-
-
-
-
-/* .gameCanvasResizeButton:focus {
-
-} */
-
-
-
 
 
 
