@@ -35,6 +35,8 @@ class GraphicsPage extends React.Component {
     
 
     componentDidMount() {
+        
+        //document.getElementById('cw').addEventListener("keydown", document.getElementById('cw').keyHandler);
         this.context = this.canvasRef.current.getContext('2d');   // use { alpha: false } to optimize
         setInterval(() => {
             
