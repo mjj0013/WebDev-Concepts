@@ -313,7 +313,7 @@ class PhysicalObject extends GameObject {
         var circleElement = document.getElementById(this.obj_id);
         circleElement.setAttribute("cx", this.x);
         circleElement.setAttribute("cy",this.y);
-        //circleElement.move(new_xVelocity,new_yVelocity);
+        
        
         this.xVelocity = new_xVelocity;
         this.yVelocity = new_yVelocity;

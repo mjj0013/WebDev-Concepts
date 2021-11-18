@@ -11,21 +11,14 @@
 
 .meshRegion {
     fill: hsla(220,50%,50%,.5);
-    stroke: black;
-
-    
-    
-    
+    /* stroke: black; */
     
 
 }
 
-
 .meshRegion:hover {
     animation: 	regionFocusAnimation infinite 500ms ;
-    
     animation-timing-function: linear;
-    
     
 }
 
@@ -39,8 +32,6 @@
         fill: hsla(220,50%,75%,.5);
     }
 }
-
-
 @keyframes slidein {
     0% {
       left: 100%;

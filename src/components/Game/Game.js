@@ -22,8 +22,8 @@ class Game extends React.Component {
         this.meshGroupRef = React.createRef();
         this.regionGroupRef = React.createRef();
         this.circleGroupRef = React.createRef();
-        this.canvasRef = React.createRef();
-        this.contextRef = React.createRef();
+        // this.canvasRef = React.createRef();
+        // this.contextRef = React.createRef();
         this.draw = this.draw.bind(this);
         this.update = this.update.bind(this);
         this.initWorld = this.initWorld.bind(this);
@@ -224,15 +224,16 @@ class Game extends React.Component {
         //this.addPhysicalObject("world-irregular-stationary", -1,-1,-1,-1,-1,-1,-1, 'rgb(54,76,24)',true);
         
         //by default, select the first object that can be controlled as the current controlled object.
-        for(var i=0; i < this.physicalObjects.length; ++i) {
-            if(this.physicalObjects.at(i).controllable) {
-                this.controlledObjectIndex = i;
-                break;
-            }
-        }
+        // for(var i=0; i < this.physicalObjects.length; ++i) {
+        //     if(this.physicalObjects.at(i).controllable) {
+        //         this.controlledObjectIndex = i;
+        //         break;
+        //     }
+        // }
     }
     
     addPhysicalObject = (obj_type,x,y, width, height,dx,dy,mass,color,isNew=true) =>{
+        //"user-ellipse",x,y,radius,radius,0,0,mass,null,true
         ++this.controlledObjectIndex;
         var obj = {
             index:this.controlledObjectIndex,
@@ -247,12 +248,13 @@ class Game extends React.Component {
             obj_type:obj_type
         }
         this.physicalObjectMap.push(obj);
-        let newObj =  new PhysicalObject(this, this.contextRef.current, obj_type, "circle"+obj.index, x, y, width, height, dx,dy,mass,null);
+        var newObj =  new PhysicalObject(this, null, obj_type, "circle"+obj.index  , x, y, width, height, dx,dy,mass,null);
         this.physicalObjects.push(newObj);
+
         if(isNew) { localStorage.physicalObjectMap = JSON.stringify(this.physicalObjectMap); }
        
-        let circleGroup = document.getElementById("circleGroup");
-        let newShape = document.createElementNS("http://www.w3.org/2000/svg",'circle');
+        var circleGroup = document.getElementById("circleGroup");
+        var newShape = document.createElementNS("http://www.w3.org/2000/svg",'circle');
         newShape.setAttribute('id',"circle"+obj.index);
         newShape.setAttribute('cx',newObj.x);
         newShape.setAttribute('cy',newObj.y);
@@ -354,6 +356,7 @@ class Game extends React.Component {
         setInterval(
             () => {
                 this.update();
+                this.M.update();
                 this.draw();
         }, 1000/60);
         
@@ -365,9 +368,8 @@ class Game extends React.Component {
         this.svgRef.current.addEventListener("wheel",this.captureZoomEvent,false);
         this.svgRef.current.addEventListener("DOMMouseScroll", this.captureZoomEvent,false);
         this.svgRef.current.addEventListener("contextmenu", e => e.preventDefault());           //prevent context menu on right click, only for gameSVG 
-
-      
         this.svgRef.current.onmousedown = this.dragMouseDown;
+
         setInterval(
             () => {
             this.update();
@@ -385,8 +387,6 @@ class Game extends React.Component {
         }
 
         this.unlisten = this.props.history.listen((location, action) => {
-            console.log(window.location.pathname);
-
             if(localStorage.first != null) {     //not the first time loading (items already saved)
                 if(this.fromLocation =="/game")  this.saveStates();
                    
@@ -423,17 +423,14 @@ class Game extends React.Component {
         //if(this.canvasRef.current!=null) {this.contextRef.current = this.canvasRef.current.getContext('2d');}
         this.physicalObjects.forEach((obj,index) => {
             obj.update();
-            this.physicalObjectMap[index].x = obj.x;
-            this.physicalObjectMap[index].y = obj.y;
+            this.physicalObjectMap[index].x =  obj.x;
+            this.physicalObjectMap[index].y =  obj.y;
             this.physicalObjectMap[index].dx = obj.xVelocity;
             this.physicalObjectMap[index].dy = obj.yVelocity;
         })
     }
 
     draw = () => {
-        //this.contextRef.current.fillStyle = "black";
-       
-        //this.contextRef.current.fillRect(0, 0, this.contextRef.current.width,   this.contextRef.current.height); 
         for(let i=0; i<this.physicalObjects.length;++i) {
             this.physicalObjects[i].draw();
         }
@@ -496,7 +493,7 @@ class Game extends React.Component {
     insertRandomizedOrb = () =>{
         let mass = getRandomInt(5,200);
         let foundSpot = false;
-        let x,y,radius;
+        var x,y,radius;
         let maxMassReducer = 5;
         let num_of_failures = 0;
         while(foundSpot==false) {
@@ -508,7 +505,6 @@ class Game extends React.Component {
             
             for(var i=0; i < this.physicalObjects; ++i) {
                 let tempObj = {x:x, y:y, radius:radius};
-               
                 let collides = this.collidesWith(this.physicalObjects[i], tempObj)
                
                 if(collides) {
@@ -562,7 +558,7 @@ class Game extends React.Component {
     generateRandomMesh = (numPts) => {
         //generate random points
         this.M.build(numPts);
-        
+        //this.M.renderAllEdges = true;
         //connect points
         this.M.generateEdges();
         this.M.depthFirstSearch();
@@ -595,8 +591,8 @@ class Game extends React.Component {
             newPolygon.setAttribute('id',this.M.edges[e].id);
             newPolygon.setAttribute('d',d);
             newPolygon.setAttribute('class','meshRegionBorder')
-         
-            this.regionGroupRef.current.appendChild(newPolygon);
+            if(this.M.renderAllEdges) this.regionGroupRef.current.appendChild(newPolygon);
+            
         }
         console.log('this.M.edges', this.M.edges)
 
@@ -606,15 +602,25 @@ class Game extends React.Component {
             var newPolygon = new Polygon(`polygon${m}`,this.M.cyclesDFS[m], this.M);
             var polygonElement = document.createElementNS("http://www.w3.org/2000/svg",'path');
             polygonElement.setAttributeNS(null,'id',`polygon${m}`);
-            polygonElement.setAttribute('class', 'meshRegion')
+            //polygonElement.setAttribute('class', 'meshRegion')
             
             let d = ``;
             for(let c=0; c < this.M.cyclesDFS[m].length; ++c) {
-                if(c==this.M.cyclesDFS[m].length-1) {
+                if(c==0) {
+                    d += `M ${this.M.pts[this.M.cyclesDFS[m][c]].x},${this.M.pts[this.M.cyclesDFS[m][c]].y}`
+                }
+                else if(c==this.M.cyclesDFS[m].length-1) {
                     this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][0]).associatedPolygons.push(`polygon${m}`);
+                    // let pt1 = this.M.pts[this.M.cyclesDFS[m][c]];
+                    // let pt2 = this.M.pts[this.M.cyclesDFS[m][0]];
+                   
+                    // d += `l ${pt1.x - pt2.x},${pt1.y - pt2.y}`
                 }
                 else {
                     console.log("this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][c+1])",this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][c+1]))
+                    // let pt1 = this.M.pts[this.M.cyclesDFS[m][c]];
+                    // let pt2 = this.M.pts[this.M.cyclesDFS[m][c+1]];
+                    // d += `l ${pt1.x - pt2.x},${pt1.y - pt2.y}`
                     this.M.getEdge(this.M.cyclesDFS[m][c],this.M.cyclesDFS[m][c+1]).associatedPolygons.push(`polygon${m}`);
                 }
 
@@ -628,9 +634,15 @@ class Game extends React.Component {
             polygonElement.setAttribute('d',d);
             this.M.polygons[`polygon${m}`] = newPolygon;
             polygonElement.onmousedown = (e) => {console.log('vertices: ', this.M.polygons[`polygon${m}`].vertices)}
-            // let sat = getRandomInt(0,100);
-            // let light = getRandomInt(0,100);
-            // polygonElement.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
+            polygonElement.setAttribute("stroke", "black");
+            polygonElement.setAttribute("stroke-width","1");
+            polygonElement.setAttribute("stroke-linecap","round");
+
+            //stroke="black" stroke-width="20" stroke-linecap="round"
+            let sat = getRandomInt(0,100);
+            let light = getRandomInt(0,100);
+            polygonElement.setAttributeNS(null,'fill',`hsla(${this.backgroundHue},${sat}%,${light}%,.5)`);
+            
             document.getElementById("polyGroup").appendChild(polygonElement);
            
           
@@ -742,7 +754,7 @@ class Game extends React.Component {
     toggleAnimateVertices(e) {
         this.M.animateMesh = !this.M.animateMesh;
     }
-
+    //<feTurbulence in="light" type="turbulence" baseFrequency="0.05" numOctaves="2" result="turbulence"/>
     render = () =>{
         //width={this.canvasWidth} height={this.canvasHeight}
         return (
@@ -757,7 +769,7 @@ class Game extends React.Component {
                         <rect id="gameSVGBackground" ref={this.svgRef} width="100%" height="100%" fill='grey' /*style={{filter:'url(#filter)'}}*//>
                         <g id="meshGroup" ref={this.meshGroupRef} transform="matrix(1 0 0 1 0 0)" >
                             <g id="regionGroup" ref={this.regionGroupRef} transform="matrix(1 0 0 1 0 0)" />
-                            <g id="polyGroup" transform="matrix(1 0 0 1 0 0)" />
+                            <g id="polyGroup" transform="matrix(1 0 0 1 0 0)"  />
                             <g id="circleGroup" ref={this.circleGroupRef} transform="matrix(1 0 0 1 0 0)"/>
                         </g>
                     </svg>

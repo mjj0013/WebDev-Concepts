@@ -8,6 +8,7 @@ export class Mesh {
         this.ptData = [];
         this.edges = []
         this.polygons = {};
+        this.edgeMap = {};      //maps edge ids to index of edge in this.edges
 
         this.hasIntersection2D = this.hasIntersection2D.bind(this);
         this.evalNewEdge = this.evalNewEdge.bind(this);
@@ -24,6 +25,7 @@ export class Mesh {
         this.update = this.update.bind(this);
         
         this.generateEdges = this.generateEdges.bind(this);
+        this.renderAllEdges = false;
         this.build = this.build.bind(this);
 
         //this.pathsToOrigin = null;
@@ -146,14 +148,15 @@ export class Mesh {
                             if(!this.ptData[pt2].connections.includes(pt1) && !this.ptData[pt1].connections.includes(pt2)) {
                                 this.ptData[pt2].connections.push(pt1);                 //add node a to node b's connections 
                                 this.ptData[pt1].connections.push(pt2);   //add node b to node a's connections 
-                                
+                               
                                 this.edges.push({               //add new edge to edges
                                     id:`edge${pt1}_${pt2}`, 
                                     data:[pt1,pt2],
                                     polygonUsageCount:0,
                                     associatedPolygons:[]
                                 });    
-                            
+                                this.edgeMap[`edge${pt1}_${pt2}`] = this.edges.length -1;
+
                                 //makes it possible to adjust associated edges whenever a vertex is dragged
                                 if(!this.ptData[pt1].edgeIDs.includes(`edge${pt1}_${pt2}`) && !this.ptData[pt1].edgeIDs.includes(`edge${pt2}_${pt1}`)) {
                                     this.ptData[pt1].edgeIDs.push(`edge${pt1}_${pt2}`);
@@ -204,26 +207,30 @@ export class Mesh {
                 }
                 for(let edge=0; edge < this.ptData[ptIndex].edgeIDs.length;++edge) {
                     let assocEdge = this.ptData[ptIndex].edgeIDs[edge];
+                    let assocEdgeData = this.edges[this.edgeMap[assocEdge]];
+                    if(this.renderAllEdges) {
+                        let ptIds = assocEdge.replace('edge','').split('_');
+                        let ptA = parseInt(ptIds[0]);
+                        let ptB = parseInt(ptIds[1]);
+                        //let assocEdgeData = this.getEdge(ptA,ptB);
+                        
+                        var d=``;
+                        if(ptIds[1]== ptIndex) {
+                            //the vertex being dragged is 'Y' in the 'edgeX_Y' naming convention, so change of coordinates that one  only
+                            d = `M ${this.pts[ptA].x},${this.pts[ptA].y}`
+                            d += `l ${this.pts[ptB].x - this.pts[ptA].x},${this.pts[ptB].y - this.pts[ptA].y}`
+    
+                        }
+                        else {
+                            //the vertex being dragged is 'X' in the 'edgeX_Y' naming convention, so change  coordinates of that one only
+                            d = `M ${this.pts[ptA].x},${this.pts[ptA].y}`
+                            d += `l ${this.pts[ptB].x - this.pts[ptA].x},${this.pts[ptB].y - this.pts[ptA].y}`
+                        }
+                        
+    
+                        document.getElementById(assocEdge).setAttribute('d',d);
+                    }
                    
-                    let ptIds = assocEdge.replace('edge','').split('_');
-                    let ptA = parseInt(ptIds[0]);
-                    let ptB = parseInt(ptIds[1]);
-                    let assocEdgeData = this.getEdge(ptA,ptB);
-                    var d=``;
-                    if(ptIds[1]== ptIndex) {
-                        //the vertex being dragged is 'Y' in the 'edgeX_Y' naming convention, so change of coordinates that one  only
-                        d = `M ${this.pts[ptA].x},${this.pts[ptA].y}`
-                        d += `l ${this.pts[ptB].x - this.pts[ptA].x},${this.pts[ptB].y - this.pts[ptA].y}`
-
-                    }
-                    else {
-                        //the vertex being dragged is 'X' in the 'edgeX_Y' naming convention, so change  coordinates of that one only
-                        d = `M ${this.pts[ptA].x},${this.pts[ptA].y}`
-                        d += `l ${this.pts[ptB].x - this.pts[ptA].x},${this.pts[ptB].y - this.pts[ptA].y}`
-                    }
-
-
-                    document.getElementById(assocEdge).setAttribute('d',d);
 
                     for(let poly=0; poly < assocEdgeData.associatedPolygons.length;++poly) {
                         let polyID = assocEdgeData.associatedPolygons[poly];
@@ -335,7 +342,7 @@ export class Mesh {
                                 nextClosestPtObj.connections.push(p);                 //add node a to node b's connections 
                                 this.ptData[p].connections.push(nextClosestPt.index);   //add node b to node a's connections 
                                 this.edges.push({id:`edge${p}_${nextClosestPt.index}`, data:[p,nextClosestPt.index], associatedPolygons:[]});    //add new edge to edges
-        
+                                this.edgeMap[`edge${p}_${nextClosestPt.index}`] = this.edges.length-1;
                                 //makes it possible to adjust associated edges whenever a vertex is dragged
                                 if(!this.ptData[p].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`) && !this.ptData[p].edgeIDs.includes(`edge${nextClosestPt.index}_${p}`)) this.ptData[p].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
                                 if(!this.ptData[p2].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`) && !this.ptData[p2].edgeIDs.includes(`edge${nextClosestPt.index}_${p}`)) this.ptData[p2].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
@@ -343,7 +350,7 @@ export class Mesh {
                         }
                     }
                     //if(this.ptData[p].connections.length >= 2) {console.log("worked"); --numStragglers;}
-                    --numStragglers;
+                    if(this.ptData[p].connections.length >= 2) { --numStragglers;}
                 }
 
                 else if(this.ptData[p].connections.length == 0) {
@@ -360,7 +367,7 @@ export class Mesh {
                                     nextClosestPtObj.connections.push(p);                 //add node a to node b's connections 
                                     this.ptData[p].connections.push(nextClosestPt.index);   //add node b to node a's connections 
                                     this.edges.push({id:`edge${p}_${nextClosestPt.index}`, data:[p,nextClosestPt.index], associatedPolygons:[]});    //add new edge to edges
-            
+                                    this.edgeMap[`edge${p}_${nextClosestPt.index}`] = this.edges.length-1;
                                     //makes it possible to adjust associated edges whenever a vertex is dragged
 
                                     if(!this.ptData[p].edgeIDs.includes(`edge${p}_${nextClosestPt.index}`) && !this.ptData[p].edgeIDs.includes(`edge${nextClosestPt.index}_${p}`)) this.ptData[p].edgeIDs.push(`edge${p}_${nextClosestPt.index}`);
@@ -392,7 +399,7 @@ export class Mesh {
     }
     polygonIsValid(polygon,incrementUsageCounts=false) {
         let result = true;
-
+        
         //checks if each edge is valid
         for(let i =0; i < polygon.length; ++i) {
             if(i==polygon.length-1) {
@@ -406,8 +413,8 @@ export class Mesh {
                 if(result) {
                     if(this.edgeExists(polygon[i],polygon[0])==false) {result = false;}
                     else {
-                        let Edge = this.getEdge(polygon[i],polygon[0]);
-                        if(Edge.polygonUsageCount >= 2) result = false;
+                        let foundEdge = this.getEdge(polygon[i],polygon[0]);
+                        if(foundEdge.polygonUsageCount >= 2) result = false;
                     }
                 }
 
@@ -424,8 +431,8 @@ export class Mesh {
                 if(result) {
                     if(this.edgeExists(polygon[i],polygon[i+1])==false) {result=false;}
                     else {
-                        let Edge = this.getEdge(polygon[i],polygon[i+1]);
-                        if(Edge.polygonUsageCount >= 2) result = false;
+                        let foundEdge = this.getEdge(polygon[i],polygon[i+1]);
+                        if(foundEdge.polygonUsageCount >= 2) result = false;
                     }
                 }
             }
@@ -479,6 +486,7 @@ export class Mesh {
         if(result && incrementUsageCounts) {
             for(let i =0; i < polygon.length; ++i) {
                 if(i==polygon.length-1) {
+                    
                     ++this.getEdge(polygon[i],polygon[0]).polygonUsageCount;  
                 }
                 else {
