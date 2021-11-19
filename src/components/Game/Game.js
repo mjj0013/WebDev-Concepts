@@ -1,7 +1,7 @@
 import React, {useRef} from 'react';
 
 import {Table, Header, Container, Divider, Icon, ItemContent } from 'semantic-ui-react';
-
+import 'material-icons/iconfont/material-icons.css';
 import Layout from '../Layout';
 import "regenerator-runtime/runtime";
 
@@ -741,16 +741,16 @@ class Game extends React.Component {
         return result;
     }
     adjustBallsVisibility(e) {
-        console.log(e.target);
+        
         if(!this.orbsHidden) {
             
             // <Icon id="unhideIcon" name='unhide' />
 
             // var I = document.createElement("Icon");
             // I.setAttribute("name","unhide");
-            
-            e.target.removeChild(document.getElementById("hideIcon"));
-            e.target.insertAdjacentHTML('beforeend', `<Icon id="unhideIcon" name='unhide' style={{pointerEvents:'none'}} />` );
+            document.getElementById("visibilityIcon").innerHTML = "visibility_off"
+            console.log(document.getElementById("visibilityIcon").innerHTML)
+            //e.target.insertAdjacentHTML('beforeend', `<Icon id="unhideIcon" name='unhide' style={{pointerEvents:'none'}} />` );
 
             document.getElementById("circleGroup").setAttribute("visibility","hidden");
             this.orbsHidden =true;
@@ -762,16 +762,23 @@ class Game extends React.Component {
             // var I = document.createElement("Icon");
             // I.setAttribute("name","hide");
             
-            e.target.removeChild(document.getElementById("unhideIcon"));
-            e.target.insertAdjacentHTML('beforeend', `<Icon id="hideIcon" name='hide' style={{pointerEvents:'none'}} />` );
+            document.getElementById("visibilityIcon").innerHTML = "visibility"
             
 
             document.getElementById("circleGroup").setAttribute("visibility","visible");
             this.orbsHidden = false;
         }
-        console.log(e.target.textContent);
+        //console.log(e.target.textContent);
     }
     toggleAnimateVertices(e) {
+
+        if(!this.M.animateMesh) {
+            document.getElementById("animateMeshButton").innerHTML = "pause";
+        }
+        else {
+            document.getElementById("animateMeshButton").innerHTML = "play_arrow";
+        }
+
         this.M.animateMesh = !this.M.animateMesh;
     }
     //<feTurbulence in="light" type="turbulence" baseFrequency="0.05" numOctaves="2" result="turbulence"/>
@@ -799,27 +806,33 @@ class Game extends React.Component {
                         
                         <div>
                             <button id="ballsVisibilityButton" onClick = {(e) =>this.adjustBallsVisibility(e)}>
-                                <Icon id="hideIcon" name='hide' style={{pointerEvents:'none'}} />
+                            <span id="visibilityIcon" class="material-icons-outlined" style={{pointerEvents:'none'}}>
+                                visibility
+                            </span>
                             </button>
                         </div>
+
                         <div>
-                            <label for="animateVertices">Mesh:</label>
-                            <button id="animateVerticesButton" onClick = {this.toggleAnimateVertices}>Toggle Animation</button>
-                        </div>
-                        <div>
-                            <label for="gravityDirection">Tilt</label>
+                            
                             <select name="gravityDirection" id="gravityDirection" style={{width:75}} onChange={this.changeGravityDirection}>
-                                <option value="None">None</option>
-                                <option value="Up">Up</option>
-                                <option value="Down">Down</option>
-                                <option value="Left">Left</option>
-                                <option value="Right">Right</option>
+                                <option value="None">&#x2716;</option>
+                                <option value="Up">&#x2191;</option>
+                                <option value="Down">&#x2193;</option>
+                                <option value="Left">&#x2190;</option>
+                                <option value="Right">&#x2192;</option>
                             </select>
                         </div>
+                        
                         <div>
-                            <label for="hueRange">Hue</label>
-                            <input type="range" min="0" max="360" id="hueRange" onInput={this.changeHue} style={{width:75}}></input>
+                            
+                            <button id="animateVerticesButton" onClick = {this.toggleAnimateVertices}>
+                                <span id="animateMeshButton" class="material-icons-outlined" style={{pointerEvents:'none'}}>
+                                    play_arrow
+                                </span>
+                            </button>
                         </div>
+                        
+                        
                     </Container>      
                 </div>
             </Layout>
