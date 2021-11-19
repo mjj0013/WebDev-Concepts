@@ -21,10 +21,12 @@ export function loadTextFile(e) {
 
 
     return client;
-
-
-    
 }
+
+
+
+
+
 export function det(a,b,c,d) {
     return a*d - b*c;
 }

@@ -7,7 +7,7 @@ import NavBar from './NavBar';
 import './layout.css';
 import CalculatorModal from './CalculatorModal';
 import SettingsModal from './SettingsModal';
-import ExtractImageDataModal from './ExtractImageData/ExtractImageData';
+//import ExtractImageDataModal from './ExtractImageData/ExtractImageData';
 
 import PropTypes from 'prop-types';
 

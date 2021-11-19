@@ -4,7 +4,7 @@ import React from 'react';
 
 import { Switch, BrowserRouter, Route } from 'react-router-dom';
 
-import DynamicPage from './DynamicPage'; 
+import FileManipPage from './FileManipPage'; 
 
 import GraphicsPage from './GraphicsPage';
 
@@ -26,7 +26,7 @@ function App() {
 		<BrowserRouter>
 			<div>
 				<Switch>
-					<Route path="/fileload" component={DynamicPage} />
+					<Route path="/fileload" component={FileManipPage} />
 					<Route path="/animation" component={GraphicsPage} />
 					<Route path="/game" component={Game} />
 					<Route  path="/" component={Home} />

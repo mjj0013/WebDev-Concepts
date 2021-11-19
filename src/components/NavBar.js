@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Header, Container, Divider, Icon,Button } from 'semantic-ui-react';
+import { Menu, Header, Container, Divider, Icon,Button, Dropdown } from 'semantic-ui-react';
 
 
 import './layout.css';
@@ -51,25 +51,34 @@ class NavBar extends React.Component {
 	}
 	render() {
 		return (	
-			<Menu id="navBar" className="nav-menu">
-				<Container>
+			<Container id='navBarContainer'>
+				<Container id="coverSVGContainer">
+					<svg id="coverSVG">
+
+					</svg>
+				</Container>
+				
+
+				<Menu id="navBar" className="nav-menu">
 					<Link to="/" className="nav-link item">Home</Link>
 					<Link to="/fileload" className="nav-link item">File Load</Link>
 					<Link to="/animation" className="nav-link item">Animation</Link>
 					<Link to="/game" className="nav-link item">Game</Link>
 					
-					<div className="nav-item">
-						<Button className="navBarButton" id='openCalc' onClick={this.toggleCalculator}>Calculator</Button> 
-					</div>
+					<Dropdown item text="Tools">
+						<Dropdown.Menu>
+							<Dropdown.Item text="Calculator" onClick={this.toggleCalculator}/>
+						</Dropdown.Menu>
+					</Dropdown>
 					
-					<div class="nav-item">
-						<Button className="navBarButton" id='openSettings'  onClick={this.toggleSettings}>
-							<Icon id="settingsIcon" name="cog" />
+					<div class="nav-item item">
+						<Button compact id='openSettings' onClick={this.toggleSettings}>
+							<i className="icon cog"/>
 						</Button> 
 					</div>
-							
-				</Container>
-			</Menu>
+				</Menu>
+			</Container>
+			
 		  );
 	}
 
