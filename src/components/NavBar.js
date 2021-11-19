@@ -17,6 +17,9 @@ class NavBar extends React.Component {
 		this.toggleSettings = this.toggleSettings.bind(this);
 		this.toggleCalculator = this.toggleCalculator.bind(this);
 		this.getChildContext = this.getChildContext.bind(this);
+
+
+		this.selectAnimationCoverSVG = this.selectAnimationCoverSVG.bind(this);
 	}
 	getChildContext() {
 		return {toggleSettings:this.toggleSettings}
@@ -49,12 +52,31 @@ class NavBar extends React.Component {
 		//settings request came from Home Page
 		if(e.target.id=="homeSettingsButton") {	console.log("home button requested settings"); }
 	}
+
+
+	selectAnimationCoverSVG() {
+		let numOfTriangles = 50;
+		let currentPos1 = {x:0,y:0};
+		let currentPos2 = {x:0,y:0};
+		let currentPos3 = {x:0,y:0};
+		for(let i =0; i < numOfTriangles; ++i) {
+			var newTriangle = document.createElementNS("http://www.w3.org/2000/svg","path");
+
+		}
+
+
+	}
 	render() {
 		return (	
 			<Container id='navBarContainer'>
 				<Container id="coverSVGContainer">
-					<svg id="coverSVG">
-
+					<svg id="coverSVG" height="100%" width="100%">
+						<g style={{stroke:"black"}} > 
+							<path d="M25,50 l50,50 l50,-50 l-100,0" style={{stroke:'rgb(0,0,0)'}, {strokeWidth:"2"},{fill:'none'}} > 
+								
+								
+							</path> 
+						</g> 
 					</svg>
 				</Container>
 				
@@ -70,17 +92,22 @@ class NavBar extends React.Component {
 							<Dropdown.Item text="Calculator" onClick={this.toggleCalculator}/>
 						</Dropdown.Menu>
 					</Dropdown>
-					
-					<div class="nav-item item">
+					<Menu.Item className="nav-item" position='right'>
 						<Button compact id='openSettings' onClick={this.toggleSettings}>
 							<i className="icon cog"/>
 						</Button> 
-					</div>
+					</Menu.Item>
+					
 				</Menu>
 			</Container>
 			
 		  );
 	}
+	// <div class="nav-item item">
+	// 					<Button compact id='openSettings' onClick={this.toggleSettings}>
+	// 						<i className="icon cog"/>
+	// 					</Button> 
+	// 				</div>
 
 	// render() {
 	// 	return (	
