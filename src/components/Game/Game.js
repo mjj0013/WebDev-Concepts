@@ -49,8 +49,8 @@ class Game extends React.Component {
       
 
         this.dragStart = null;
-   
         
+        this.orbsHidden = false;
 
         this.numOfBackgroundShades = 5;
         this.changeGravityDirection = this.changeGravityDirection.bind(this);
@@ -741,13 +741,33 @@ class Game extends React.Component {
         return result;
     }
     adjustBallsVisibility(e) {
-        if(e.target.textContent.substr(0,4)=="Hide") {
-            e.target.textContent = "Show orbs";
+        console.log(e.target);
+        if(!this.orbsHidden) {
+            
+            // <Icon id="unhideIcon" name='unhide' />
+
+            // var I = document.createElement("Icon");
+            // I.setAttribute("name","unhide");
+            
+            e.target.removeChild(document.getElementById("hideIcon"));
+            e.target.insertAdjacentHTML('beforeend', `<Icon id="unhideIcon" name='unhide' style={{pointerEvents:'none'}} />` );
+
             document.getElementById("circleGroup").setAttribute("visibility","hidden");
+            this.orbsHidden =true;
         }
         else {
-            e.target.textContent = "Hide orbs";
+            
+            //<Icon id="hideIcon" name='hide' />
+
+            // var I = document.createElement("Icon");
+            // I.setAttribute("name","hide");
+            
+            e.target.removeChild(document.getElementById("unhideIcon"));
+            e.target.insertAdjacentHTML('beforeend', `<Icon id="hideIcon" name='hide' style={{pointerEvents:'none'}} />` );
+            
+
             document.getElementById("circleGroup").setAttribute("visibility","visible");
+            this.orbsHidden = false;
         }
         console.log(e.target.textContent);
     }
@@ -759,11 +779,8 @@ class Game extends React.Component {
         //width={this.canvasWidth} height={this.canvasHeight}
         return (
             <Layout title="Game Page" description="A description about the game">
-                <Container>
-                    <Header as="h3">Another header</Header>
-                </Container>
                 <div id="viewAndPanel" width={this.canvasWidth} height={this.canvasHeight}>
-                    <svg id="gameSVG"  ref={this.svgRef}  width={this.canvasWidth} height={this.canvasHeight} xmlns="http://www.w3.org/2000/svg"> 
+                    <svg id="gameSVG" viewBox="0 0 800 600" ref={this.svgRef}   width={800} height={600} xmlns="http://www.w3.org/2000/svg"> 
                         
 
                         <rect id="gameSVGBackground" ref={this.svgRef} width="100%" height="100%" fill='grey' /*style={{filter:'url(#filter)'}}*//>
@@ -779,9 +796,11 @@ class Game extends React.Component {
                             <Icon name='add' />
                         </button> 
                         
-                        <Divider />
+                        
                         <div>
-                            <button id="ballsVisibilityButton" onClick = {this.adjustBallsVisibility}>Hide orbs</button>
+                            <button id="ballsVisibilityButton" onClick = {(e) =>this.adjustBallsVisibility(e)}>
+                                <Icon id="hideIcon" name='hide' style={{pointerEvents:'none'}} />
+                            </button>
                         </div>
                         <div>
                             <label for="animateVertices">Mesh:</label>
