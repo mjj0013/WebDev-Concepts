@@ -24,7 +24,7 @@ body {
 	top:0px;
 	left:0px;
 	width:100vw;
-	height:100px;
+	height:150px;
 }
 
 .nav-menu {
@@ -230,35 +230,21 @@ select {
 }
 
 
-/* .gameCanvas {
-	--gameCanvasWidth: 800px;
-	--gameCanvasHeight: 600px;
-	width:var(--gameCanvasWidth);
-	height:var(--gameCanvasHeight);
-	display:flex;
-	position:absolute;
-	
-	
-	
-	
-} */
-
 
 #gameSVG {
 	/* width:3000px;
 	height:2000px; */
 	position:absolute;
-	/* position:fixed; */
+	
 	top:200px;
 	left:100px;
 	overflow:hidden;
 }
-
-
-.gameCanvas:hover {
+#gameSVG:hover {
 	cursor:grab;
-
 }
+
+
 
 
 #gameControlPanel {
@@ -298,12 +284,10 @@ select {
 	
 }
 
-svg {
-	
-	pointer-events: none;
-}
+
 #coverSVG {
 	animation: firstAnimation 2s linear forwards infinite;
+	overflow:hidden;
 }
 @keyframes firstAnimation {
 	to {
