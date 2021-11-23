@@ -19,12 +19,36 @@ body {
 	top: 0;
 	left: 0;
 }
-#coverSVGContainer {
+#coverCanvas {
 	position:fixed;
 	top:0px;
 	left:0px;
 	width:100vw;
+	height: 125px;
+	
+	border:1px solid black;
+}
+#coverCanvasContainer {
+	
+	top:0px;
+	left:0px;
+	width:100vw;
+	height:100px;
+	
+}
+
+
+#coverSVG {
+	animation: firstAnimation 2s linear forwards infinite;
+	
+}
+#coverSVGContainer {
+	
+	top:0px;
+	left:0px;
+	width:100vw;
 	height:150px;
+	
 }
 
 .nav-menu {
@@ -285,10 +309,7 @@ select {
 }
 
 
-#coverSVG {
-	animation: firstAnimation 2s linear forwards infinite;
-	overflow:hidden;
-}
+
 @keyframes firstAnimation {
 	to {
 		stroke:green;
