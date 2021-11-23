@@ -177,8 +177,9 @@ class Game extends React.Component {
     }
 
     dragMouseDown(e) {
+        console.log("ejriejf");
         e = e || window.event;
-        //console.log("clicked", e.offsetX, e.offsetY)
+        console.log("clicked", e.offsetX, e.offsetY)
        
 
         
@@ -276,7 +277,7 @@ class Game extends React.Component {
         this.lastZoom.x = e.offsetX;
         this.lastZoom.y = e.offsetY;
         let delta = e.wheelDelta/1000;
-       
+        console.log("delta",delta);
         if(delta) this.updateZoom(delta);
 
         this.zoomHasHappened = 1;
@@ -364,11 +365,13 @@ class Game extends React.Component {
     }
     componentDidMount = () => {
         this.M = new Mesh(this);
-        
+       
+        this.svgRef.current.addEventListener("mousedown",this.dragMouseDown,false);
         this.svgRef.current.addEventListener("wheel",this.captureZoomEvent,false);
         this.svgRef.current.addEventListener("DOMMouseScroll", this.captureZoomEvent,false);
         this.svgRef.current.addEventListener("contextmenu", e => e.preventDefault());           //prevent context menu on right click, only for gameSVG 
-        this.svgRef.current.onmousedown = this.dragMouseDown;
+        
+        
 
         setInterval(
             () => {
